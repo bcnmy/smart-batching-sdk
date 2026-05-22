@@ -4,7 +4,6 @@ import {
   MEEVersion,
   toMultichainNexusAccount,
 } from '@biconomy/abstractjs';
-import type { ComposableCall } from 'smart-batching';
 import type { Hex } from 'viem';
 import { createPublicClient, createWalletClient, fallback, http } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
@@ -56,14 +55,6 @@ export const WETH_ADDRESS = '0x4200000000000000000000000000000000000006' as cons
 // Nexus SCA + MEE client — shared init for integration tests
 // ---------------------------------------------------------------------------
 
-// ---------------------------------------------------------------------------
-// Type bridge — @biconomy/abstractjs ConstraintType predates GTE_SIGNED / LTE_SIGNED / OR.
-// At runtime the values are always valid; this cast is a version-compatibility shim only.
-// ---------------------------------------------------------------------------
-
-// biome-ignore lint/suspicious/noExplicitAny: version mismatch bridge between smart-batching and @biconomy/abstractjs
-export const toMeeCalls = (calls: ComposableCall[]): any => calls;
-
 export async function initNexus() {
   if (!account) throw new Error('PRIVATE_KEY is not set in environment');
 
@@ -73,7 +64,7 @@ export async function initNexus() {
       {
         chain: baseSepolia,
         transport,
-        version: getMEEVersion(MEEVersion.V2_2_1),
+        version: getMEEVersion(MEEVersion.V2_2_2),
       },
     ],
   });

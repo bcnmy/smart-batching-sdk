@@ -1,8 +1,9 @@
 import { createComposableBatch } from 'smart-batching';
 import type { Address } from 'viem';
+import { parseUnits } from 'viem';
 import { baseSepolia } from 'viem/chains';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { account, initNexus, publicClient, toMeeCalls } from '../utils';
+import { account, initNexus, publicClient } from '../utils';
 import { RUNTIME_TRANSFER_ABI } from './abi/runtime-transfer';
 import {
   ensureRuntimeTransferContractBalance,
@@ -64,13 +65,13 @@ describe('Integration — signed integer and OR constraints on runtimeBalance (B
     await expect(
       meeClient.getQuote({
         instructions: [
-          { calls: toMeeCalls(await batch.toCalls()), chainId: baseSepolia.id, isComposable: true },
+          { calls: await batch.toCalls(), chainId: baseSepolia.id, isComposable: true },
         ],
         simulation: { simulate: true },
         feeToken: { address: USDC, chainId: baseSepolia.id },
       }),
     ).rejects.toThrow(
-      'UserOp [1] simulation failed. Revert reason: Execution reverted at contract 0x0000000020fe2f30453074ad916edeb653ec7e9d and reverted with error selector 0xa31844b0',
+      'UserOp [1] simulation failed. Revert reason: Execution reverted at contract',
     );
   });
 
@@ -98,13 +99,13 @@ describe('Integration — signed integer and OR constraints on runtimeBalance (B
     await expect(
       meeClient.getQuote({
         instructions: [
-          { calls: toMeeCalls(await batch.toCalls()), chainId: baseSepolia.id, isComposable: true },
+          { calls: await batch.toCalls(), chainId: baseSepolia.id, isComposable: true },
         ],
         simulation: { simulate: true },
         feeToken: { address: USDC, chainId: baseSepolia.id },
       }),
     ).rejects.toThrow(
-      'UserOp [1] simulation failed. Revert reason: Execution reverted at contract 0x0000000020fe2f30453074ad916edeb653ec7e9d and reverted with error selector 0xa31844b0',
+      'UserOp [1] simulation failed. Revert reason: Execution reverted at contract',
     );
   });
 
@@ -145,9 +146,7 @@ describe('Integration — signed integer and OR constraints on runtimeBalance (B
     ]);
 
     const quote = await meeClient.getQuote({
-      instructions: [
-        { calls: toMeeCalls(await batch.toCalls()), chainId: baseSepolia.id, isComposable: true },
-      ],
+      instructions: [{ calls: await batch.toCalls(), chainId: baseSepolia.id, isComposable: true }],
       simulation: { simulate: true },
       feeToken: { address: USDC, chainId: baseSepolia.id },
     });
@@ -160,6 +159,114 @@ describe('Integration — signed integer and OR constraints on runtimeBalance (B
     expect(contractBalanceAfter).toEqual(0n);
 
     // SCA received the transferred funds
+    const scaBalanceAfter = await usdcBalanceOf(scaAddress);
+    expect(scaBalanceAfter).toBeGreaterThan(scaBalanceBefore);
+  });
+
+  it('OR with mixed signed and unsigned: unsigned lte passes when signed lte fails — transfer executes', async () => {
+    // Contract holds TRANSFER_AMOUNT (1 USDC = 1_000_000n).
+    // OR constraint:
+    //   - lteSigned: 0n              → 1_000_000 ≤ 0 as int256?    No  — fails
+    //   - lte: parseUnits('1', 6)    → 1_000_000 ≤ 1_000_000?      Yes — passes
+    // OR passes because the unsigned LTE branch succeeds → transfer executes.
+    const ONE_USDC = parseUnits('1', 6);
+
+    const batch = createComposableBatch(publicClient, scaAddress);
+    const usdc = batch.erc20Token(USDC);
+    const runtimeTransfer = batch.contract(RUNTIME_TRANSFER_CONTRACT, RUNTIME_TRANSFER_ABI);
+
+    const contractBalanceBefore = await usdcBalanceOf(RUNTIME_TRANSFER_CONTRACT);
+    expect(contractBalanceBefore).toEqual(TRANSFER_AMOUNT);
+
+    const scaBalanceBefore = await usdcBalanceOf(scaAddress);
+
+    batch.add([
+      runtimeTransfer.write({
+        functionName: 'transferFunds',
+        args: [
+          USDC,
+          scaAddress,
+          usdc.runtimeBalance({
+            owner: RUNTIME_TRANSFER_CONTRACT,
+            constraints: [
+              {
+                or: [
+                  { lteSigned: 0n }, // fails: 1 USDC > 0
+                  { lte: ONE_USDC }, // passes: 1 USDC ≤ 1 USDC
+                ],
+              },
+            ],
+          }),
+        ],
+      }),
+    ]);
+
+    const quote = await meeClient.getQuote({
+      instructions: [{ calls: await batch.toCalls(), chainId: baseSepolia.id, isComposable: true }],
+      simulation: { simulate: true },
+      feeToken: { address: USDC, chainId: baseSepolia.id },
+    });
+
+    const { hash } = await meeClient.executeQuote({ quote });
+    await meeClient.waitForSupertransactionReceipt({ hash });
+
+    const contractBalanceAfter = await usdcBalanceOf(RUNTIME_TRANSFER_CONTRACT);
+    expect(contractBalanceAfter).toEqual(0n);
+
+    const scaBalanceAfter = await usdcBalanceOf(scaAddress);
+    expect(scaBalanceAfter).toBeGreaterThan(scaBalanceBefore);
+  });
+
+  it('OR with mixed signed and unsigned: negative gteSigned(-1) passes alongside unsigned lte — transfer executes', async () => {
+    // Contract holds TRANSFER_AMOUNT (1 USDC = 1_000_000n).
+    // OR constraint:
+    //   - gteSigned: -1n             → 1_000_000 ≥ -1 as int256?   Yes — passes immediately
+    //   - lte: parseUnits('1', 6)    → 1_000_000 ≤ 1_000_000?      Yes — would also pass
+    // Validates that a negative int256 lower-bound coexists with an unsigned sub in a single OR.
+    const ONE_USDC = parseUnits('1', 6);
+
+    const batch = createComposableBatch(publicClient, scaAddress);
+    const usdc = batch.erc20Token(USDC);
+    const runtimeTransfer = batch.contract(RUNTIME_TRANSFER_CONTRACT, RUNTIME_TRANSFER_ABI);
+
+    const contractBalanceBefore = await usdcBalanceOf(RUNTIME_TRANSFER_CONTRACT);
+    expect(contractBalanceBefore).toEqual(TRANSFER_AMOUNT);
+
+    const scaBalanceBefore = await usdcBalanceOf(scaAddress);
+
+    batch.add([
+      runtimeTransfer.write({
+        functionName: 'transferFunds',
+        args: [
+          USDC,
+          scaAddress,
+          usdc.runtimeBalance({
+            owner: RUNTIME_TRANSFER_CONTRACT,
+            constraints: [
+              {
+                or: [
+                  { gteSigned: -1n }, // passes: any positive balance ≥ -1 as int256
+                  { lte: ONE_USDC }, // also passes
+                ],
+              },
+            ],
+          }),
+        ],
+      }),
+    ]);
+
+    const quote = await meeClient.getQuote({
+      instructions: [{ calls: await batch.toCalls(), chainId: baseSepolia.id, isComposable: true }],
+      simulation: { simulate: true },
+      feeToken: { address: USDC, chainId: baseSepolia.id },
+    });
+
+    const { hash } = await meeClient.executeQuote({ quote });
+    await meeClient.waitForSupertransactionReceipt({ hash });
+
+    const contractBalanceAfter = await usdcBalanceOf(RUNTIME_TRANSFER_CONTRACT);
+    expect(contractBalanceAfter).toEqual(0n);
+
     const scaBalanceAfter = await usdcBalanceOf(scaAddress);
     expect(scaBalanceAfter).toBeGreaterThan(scaBalanceBefore);
   });

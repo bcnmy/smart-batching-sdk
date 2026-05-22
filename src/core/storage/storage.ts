@@ -7,7 +7,6 @@ import { getStorageNamespace, getStorageSlot, getStorageSlotKey } from './slot';
 import type {
   CheckStorageParams,
   GetStorageKeyParams,
-  ReadStorageParams,
   RuntimeValueStorageParams,
   StorageInstance,
   WriteStorageParams,
@@ -38,29 +37,6 @@ export function createStorage<
       const resolvedAccountAddress = accountAddressOverride ?? accountAddress;
       const resolvedCallerAddress = callerAddressOverride ?? resolvedAccountAddress;
       return getStorageSlotKey(resolvedAccountAddress, resolvedCallerAddress);
-    },
-
-    async read({
-      storageKey,
-      slotIndex = 0,
-      accountAddress: accountAddressOverride,
-      callerAddress: callerAddressOverride,
-    }: ReadStorageParams = {}) {
-      const resolvedAccountAddress = accountAddressOverride ?? accountAddress;
-      const resolvedCallerAddress = callerAddressOverride ?? resolvedAccountAddress;
-
-      const slot = await getStorageSlot(
-        resolvedAccountAddress,
-        resolvedCallerAddress,
-        storageKey,
-        slotIndex,
-      );
-      const namespace = getStorageNamespace(resolvedAccountAddress, resolvedCallerAddress);
-
-      return contractInstance.read({
-        functionName: 'readStorage',
-        args: [namespace, slot],
-      }) as Promise<`0x${string}`>;
     },
 
     async write({

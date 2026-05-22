@@ -2,7 +2,7 @@ import { createComposableBatch } from 'smart-batching';
 import type { Address } from 'viem';
 import { baseSepolia } from 'viem/chains';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { account, initNexus, publicClient, toMeeCalls } from '../utils';
+import { account, initNexus, publicClient } from '../utils';
 import { RUNTIME_TRANSFER_ABI } from './abi/runtime-transfer';
 import {
   ensureRuntimeTransferContractBalance,
@@ -79,9 +79,7 @@ describe('Integration — composable execution via runtime transfer contract (Ba
     expect(batch.length).toBe(3);
 
     const quote = await meeClient.getQuote({
-      instructions: [
-        { calls: toMeeCalls(await batch.toCalls()), chainId: baseSepolia.id, isComposable: true },
-      ],
+      instructions: [{ calls: await batch.toCalls(), chainId: baseSepolia.id, isComposable: true }],
       simulation: { simulate: true },
       feeToken: { address: USDC, chainId: baseSepolia.id },
     });
@@ -135,9 +133,7 @@ describe('Integration — composable execution via runtime transfer contract (Ba
     expect(batch.length).toBe(3);
 
     const quote = await meeClient.getQuote({
-      instructions: [
-        { calls: toMeeCalls(await batch.toCalls()), chainId: baseSepolia.id, isComposable: true },
-      ],
+      instructions: [{ calls: await batch.toCalls(), chainId: baseSepolia.id, isComposable: true }],
       simulation: { simulate: true },
       feeToken: { address: USDC, chainId: baseSepolia.id },
     });
@@ -187,9 +183,7 @@ describe('Integration — composable execution via runtime transfer contract (Ba
     expect(batch.length).toBe(3);
 
     const quote = await meeClient.getQuote({
-      instructions: [
-        { calls: toMeeCalls(await batch.toCalls()), chainId: baseSepolia.id, isComposable: true },
-      ],
+      instructions: [{ calls: await batch.toCalls(), chainId: baseSepolia.id, isComposable: true }],
       simulation: { simulate: true },
       feeToken: { address: USDC, chainId: baseSepolia.id },
     });
@@ -239,9 +233,7 @@ describe('Integration — composable execution via runtime transfer contract (Ba
     expect(batch.length).toBe(3);
 
     const quote = await meeClient.getQuote({
-      instructions: [
-        { calls: toMeeCalls(await batch.toCalls()), chainId: baseSepolia.id, isComposable: true },
-      ],
+      instructions: [{ calls: await batch.toCalls(), chainId: baseSepolia.id, isComposable: true }],
       simulation: { simulate: true },
       feeToken: { address: USDC, chainId: baseSepolia.id },
     });
@@ -291,9 +283,7 @@ describe('Integration — composable execution via runtime transfer contract (Ba
     expect(batch.length).toBe(3);
 
     const quote = await meeClient.getQuote({
-      instructions: [
-        { calls: toMeeCalls(await batch.toCalls()), chainId: baseSepolia.id, isComposable: true },
-      ],
+      instructions: [{ calls: await batch.toCalls(), chainId: baseSepolia.id, isComposable: true }],
       simulation: { simulate: true },
       feeToken: { address: USDC, chainId: baseSepolia.id },
     });
@@ -342,9 +332,7 @@ describe('Integration — composable execution via runtime transfer contract (Ba
     expect(batch.length).toBe(3);
 
     const quote = await meeClient.getQuote({
-      instructions: [
-        { calls: toMeeCalls(await batch.toCalls()), chainId: baseSepolia.id, isComposable: true },
-      ],
+      instructions: [{ calls: await batch.toCalls(), chainId: baseSepolia.id, isComposable: true }],
       simulation: { simulate: true },
       feeToken: { address: USDC, chainId: baseSepolia.id },
     });

@@ -199,22 +199,6 @@ describe('storage — write', () => {
 });
 
 // ---------------------------------------------------------------------------
-// storage — read
-// ---------------------------------------------------------------------------
-// readStorage is publicly readable by anyone — only writes are access-guarded.
-// The contract reverts when reading a slot that has never been written to.
-// Live read of an initialized slot is covered by the integration test.
-
-describe('storage — read', () => {
-  const instance = createStorage(publicClient, ACCOUNT);
-
-  it('rejects for an uninitialized slot', async () => {
-    // The contract reverts when the slot has no data written to it yet
-    await expect(instance.read({ storageKey: 999999999999999n })).rejects.toThrow();
-  });
-});
-
-// ---------------------------------------------------------------------------
 // storage — runtimeValue
 // ---------------------------------------------------------------------------
 

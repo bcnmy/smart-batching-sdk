@@ -84,40 +84,6 @@ await storage.write({ storageKey, value: 100 });                        // numbe
 
 ---
 
-### read
-
-Reads the value stored in a slot off-chain. Returns the raw `bytes32` hex value. Use this after the transaction settles to verify what was stored.
-
-```ts
-read(params?: {
-  storageKey?: bigint;
-  slotIndex?: number;     // defaults to 0
-  accountAddress?: Address;
-  callerAddress?: Address;
-}): Promise<Hex>
-```
-
-```ts
-const stored = await storage.read({ storageKey });
-// stored: '0x000000000000000000000000000000000000000000000000000000003b9aca00'
-
-// Read a specific slot index (for multi-output captures)
-const slot0 = await storage.read({ storageKey, slotIndex: 0 });
-const slot1 = await storage.read({ storageKey, slotIndex: 1 });
-const slot2 = await storage.read({ storageKey, slotIndex: 2 });
-```
-
-Use `toBytes32` from the SDK to convert a known value for comparison:
-
-```ts
-import { toBytes32 } from 'smart-batching';
-
-const stored = await storage.read({ storageKey });
-console.log(stored === toBytes32(parseUnits('10', 6))); // true
-```
-
----
-
 ### runtimeValue
 
 Returns a `RuntimeValue` that resolves to the value in a storage slot at execution time. Pass it as an argument to any `write` call that follows the slot being populated.
@@ -281,9 +247,4 @@ myContract.write({
 await storage.check({ storageKey, slotIndex: 0, constraints: [{ eq: 10n }] }),
 await storage.check({ storageKey, slotIndex: 1, constraints: [{ eq: 21n }] }),
 await storage.check({ storageKey, slotIndex: 2, constraints: [{ eq: 1n }] }),
-
-// Off-chain verification
-const sum     = await storage.read({ storageKey, slotIndex: 0 });
-const product = await storage.read({ storageKey, slotIndex: 1 });
-const greater = await storage.read({ storageKey, slotIndex: 2 });
 ```

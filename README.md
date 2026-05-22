@@ -486,8 +486,8 @@ Two patterns exist:
 
 | Pattern | How the value gets into storage | How it is read back |
 |---|---|---|
-| **Capture** | The composability module writes the return value of a call automatically | `storage.runtimeValue()` injects it; `storage.check()` asserts it; `storage.read()` reads it off-chain |
-| **Explicit write** | `storage.write()` — you supply the value at signing time | Same — `storage.runtimeValue()`, `storage.check()`, `storage.read()` |
+| **Capture** | The composability module writes the return value of a call automatically | `storage.runtimeValue()` injects it; `storage.check()` asserts it |
+| **Explicit write** | `storage.write()` — you supply the value at signing time | Same — `storage.runtimeValue()`, `storage.check()` |
 
 ---
 
@@ -556,11 +556,6 @@ batch.add([
   await storage.check({ storageKey, slotIndex: 1, constraints: [{ eq: 21n }] }),
   await storage.check({ storageKey, slotIndex: 2, constraints: [{ eq: 1n }] }),
 ]);
-
-// Off-chain reads after settlement
-const sum     = await storage.read({ storageKey, slotIndex: 0 });
-const product = await storage.read({ storageKey, slotIndex: 1 });
-const greater = await storage.read({ storageKey, slotIndex: 2 });
 ```
 
 #### staticCall capture
@@ -593,10 +588,6 @@ batch.add([
     constraints: [{ eq: 12n }],
   }),
 ]);
-
-// Off-chain read after settlement
-const captured = await storage.read({ storageKey });
-// captured === toBytes32(12n)
 ```
 
 > **Constraint**: all captured return types must be static ABI types. Dynamic types (`bytes`, `string`, `T[]`) are not supported in captures.
@@ -640,13 +631,6 @@ batch.add([
 ]);
 ```
 
-**Off-chain verification** — after the transaction settles, read the slot directly to confirm what was stored:
-
-```ts
-const stored = await storage.read({ storageKey });
-// stored === toBytes32(amount)
-```
-
 `storage.getStorageKey()` returns a unique `bigint` key each time it is called, so multiple storage slots within the same batch never collide.
 
 ---
@@ -660,4 +644,4 @@ Detailed SDK reference for each module — all parameters, return types, and foc
 | [Batch](./docs/batch.md) | `createComposableBatch` — the entry point. Building, assembling, and serialising a composable batch. |
 | [Token](./docs/token.md) | `ERC20TokenInstance` and `NativeTokenInstance` — reads, writes, runtime balances, and allowances. |
 | [Contract](./docs/contract.md) | `ContractInstance` — generic contract reads, composable writes, runtime values, captures, and checks. |
-| [Storage](./docs/storage.md) | `StorageInstance` — namespace storage reads, writes, runtime values, checks, and slot indexing. |
+| [Storage](./docs/storage.md) | `StorageInstance` — namespace storage writes, runtime values, checks, and slot indexing. |

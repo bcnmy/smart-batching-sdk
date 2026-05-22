@@ -38,7 +38,7 @@
     "version": "changeset version"
   },
   "devDependencies": {
-    "@biconomy/abstractjs": "^1.2.3",
+    "@biconomy/abstractjs": "^1.2.4",
     "@biomejs/biome": "2.4.9",
     "@changesets/cli": "2.30.0",
     "@commitlint/cli": "^20.5.0",

@@ -4,7 +4,7 @@
     "": {
       "name": "composable-sdk",
       "devDependencies": {
-        "@biconomy/abstractjs": "^1.2.3",
+        "@biconomy/abstractjs": "^1.2.4",
         "@biomejs/biome": "2.4.9",
         "@changesets/cli": "2.30.0",
         "@commitlint/cli": "^20.5.0",
@@ -29,7 +29,7 @@
 
     "@babel/runtime": ["@babel/runtime@7.29.2", "", {}, "sha512-JiDShH45zKHWyGe4ZNVRrCjBz8Nh9TMmZG1kh4QTK8hCBTWBi8Da+i7s1fJw7/lYpM4ccepSNfqzZ/QvABBi5g=="],
 
-    "@biconomy/abstractjs": ["@biconomy/abstractjs@1.2.3", "", { "peerDependencies": { "@metamask/delegation-toolkit": "^0.11.0", "@noble/curves": "2.0.1", "@openzeppelin/merkle-tree": "1.0.8", "@rhinestone/module-sdk": "0.4.0", "@safe-global/types-kit": "3.0.0", "typescript": "^5.8.2", "viem": "^2.26.2" } }, "sha512-7o9rFaL7qoHsyBjcr40qKM5NPpvKSA7wpNhadHO15qVvMhrfCcESL7mJCIvRgZqg5mKDoEv766u3cpIDUFhxAQ=="],
+    "@biconomy/abstractjs": ["@biconomy/abstractjs@1.2.4", "", { "peerDependencies": { "@metamask/delegation-toolkit": "^0.11.0", "@noble/curves": "2.0.1", "@openzeppelin/merkle-tree": "1.0.8", "@rhinestone/module-sdk": "0.4.0", "@safe-global/types-kit": "3.0.0", "typescript": "^5.8.2", "viem": "^2.26.2" } }, "sha512-7EM3ULl9G6sZbLEHo+9eOCt05s8HS/DbuXa4O5Rfv8YHq7n2ot11WY+vTd4d64xMhwKMbOcCuRLELLuIFf56tg=="],
 
     "@biomejs/biome": ["@biomejs/biome@2.4.9", "", { "optionalDependencies": { "@biomejs/cli-darwin-arm64": "2.4.9", "@biomejs/cli-darwin-x64": "2.4.9", "@biomejs/cli-linux-arm64": "2.4.9", "@biomejs/cli-linux-arm64-musl": "2.4.9", "@biomejs/cli-linux-x64": "2.4.9", "@biomejs/cli-linux-x64-musl": "2.4.9", "@biomejs/cli-win32-arm64": "2.4.9", "@biomejs/cli-win32-x64": "2.4.9" }, "bin": { "biome": "bin/biome" } }, "sha512-wvZW92FrwitTcacvCBT8xdAbfbxWfDLwjYMmU3djjqQTh7Ni4ZdiWIT/x5VcZ+RQuxiKzIOzi5D+dcyJDFZMsA=="],
 

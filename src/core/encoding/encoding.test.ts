@@ -1,4 +1,4 @@
-import { encodeAbiParameters, getAddress } from 'viem';
+import { encodeAbiParameters, getAddress, parseUnits } from 'viem';
 import { describe, expect, it } from 'vitest';
 import {
   equalTo,
@@ -559,5 +559,22 @@ describe('validateAndProcessConstraints — OR', () => {
     expect(() =>
       validateAndProcessConstraints([orConstraint([greaterThanOrEqualTo(-1n)])]),
     ).toThrow('Invalid constraint value');
+  });
+
+  it("OR with two signed subs preserves two's-complement encoding for negative values", () => {
+    const ONE_USDC = parseUnits('1', 6);
+
+    const [c] = validateAndProcessConstraints([
+      orConstraint([greaterThanOrEqualToSigned(-1n), lessThanOrEqualToSigned(ONE_USDC)]),
+    ]);
+
+    expect(c.constraintType).toBe(ConstraintType.OR);
+    expect(c.referenceData).toMatch(/^0x[0-9a-f]+$/i);
+
+    // int256(-1) in two's complement = 0xffff...ff (32 bytes all set).
+    // Verifies the referenceData contains these bytes — unsigned arithmetic would
+    // encode -1 as a very different positive value.
+    const negOneHex = 'f'.repeat(64);
+    expect(c.referenceData.toLowerCase()).toContain(negOneHex);
   });
 });
