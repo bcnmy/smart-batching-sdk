@@ -11,7 +11,7 @@ export interface WriteStorageParams {
 }
 
 export interface RuntimeValueStorageParams {
-  constraints?: RuntimeConstraint[];
+  constraint?: RuntimeConstraint;
   storageKey?: bigint;
   slotIndex?: number;
   accountAddress?: Address;
@@ -19,7 +19,7 @@ export interface RuntimeValueStorageParams {
 }
 
 export interface CheckStorageParams {
-  constraints: RuntimeConstraint[];
+  constraint: RuntimeConstraint;
   storageKey?: bigint;
   slotIndex?: number;
   accountAddress?: Address;

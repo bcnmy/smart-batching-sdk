@@ -64,16 +64,16 @@ export function createContract<
 
       return composableCall;
     },
-    runtimeValue({ functionName, args, constraints = [] }) {
+    runtimeValue({ functionName, args, constraint }) {
       return runtimeParamViaCustomStaticCall({
         targetContractAddress: address,
         functionAbi: abi as Abi,
         functionName,
         args: args as AnyData[],
-        constraints: toConstraintFields(constraints),
+        constraints: toConstraintFields(constraint),
       });
     },
-    check({ functionName, args, constraints }) {
+    check({ functionName, args, constraint }) {
       const encodedParam = encodeAbiParameters(
         [{ type: 'address' }, { type: 'bytes' }],
         [
@@ -86,7 +86,7 @@ export function createContract<
         ],
       );
 
-      const constraintsToAdd = validateAndProcessConstraints(toConstraintFields(constraints));
+      const constraintsToAdd = validateAndProcessConstraints(toConstraintFields(constraint));
 
       const inputParams: InputParam[] = [
         prepareInputParam(InputParamFetcherType.STATIC_CALL, encodedParam, constraintsToAdd),

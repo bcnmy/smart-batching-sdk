@@ -63,7 +63,7 @@ export function createStorage<
     },
 
     async runtimeValue({
-      constraints,
+      constraint,
       storageKey,
       slotIndex = 0,
       accountAddress: accountAddressOverride,
@@ -83,12 +83,12 @@ export function createStorage<
       return contractInstance.runtimeValue({
         functionName: 'readStorage',
         args: [namespace, slot],
-        constraints,
+        constraint,
       });
     },
 
     async check({
-      constraints,
+      constraint,
       storageKey,
       slotIndex = 0,
       accountAddress: accountAddressOverride,
@@ -108,7 +108,7 @@ export function createStorage<
       return contractInstance.check({
         functionName: 'readStorage',
         args: [namespace, slot],
-        constraints,
+        constraint,
       });
     },
   };

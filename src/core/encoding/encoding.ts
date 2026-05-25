@@ -326,11 +326,11 @@ const toChildConstraintField = (c: ChildConstraint): ConstraintField => {
   return equalTo(c.eq);
 };
 
-export const toConstraintFields = (constraints: RuntimeConstraint[]): ConstraintField[] =>
-  constraints.map((c) => {
-    if ('or' in c) return orConstraint(c.or.map(toChildConstraintField));
-    return toChildConstraintField(c);
-  });
+export const toConstraintFields = (constraint?: RuntimeConstraint): ConstraintField[] => {
+  if (constraint === undefined) return [];
+  if ('or' in constraint) return [orConstraint(constraint.or.map(toChildConstraintField))];
+  return [toChildConstraintField(constraint)];
+};
 
 export const prepareTargetAndValueInputParams = (
   to: Address | RuntimeValue,

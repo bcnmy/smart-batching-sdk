@@ -115,11 +115,11 @@ export type ChildConstraint =
   | { lteSigned: bigint };
 
 /**
- * User-facing constraint format. Pass as the optional last argument to any runtimeXxx method.
+ * User-facing constraint format. Pass as the `constraint` argument to any runtimeXxx or check method.
  * OR evaluates its sub-constraints and passes if at least one is satisfied.
  * OR cannot be nested inside another OR.
- * @example [{ gte: 1000n }, { lte: 5000n }]
- * @example [{ or: [{ eq: 0n }, { gte: 100n }] }]
+ * @example { gte: 1000n }
+ * @example { or: [{ eq: 0n }, { gte: 100n }] }
  */
 export type RuntimeConstraint = ChildConstraint | { or: ChildConstraint[] };
 
