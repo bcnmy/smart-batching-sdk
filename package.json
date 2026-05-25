@@ -17,13 +17,20 @@
     "biconomy",
     "sdk"
   ],
-  "module": "src/index.ts",
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "typings": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
   },
   "files": [
-    "src",
+    "dist",
     "README.md"
   ],
   "sideEffects": false,
@@ -31,10 +38,11 @@
     "lint": "biome lint --write .",
     "format": "biome format --write .",
     "check": "biome check --write .",
-    "build": "tsc --noEmit",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "release": "changeset publish",
+    "release": "bun run build && changeset publish",
     "version": "changeset version"
   },
   "devDependencies": {
@@ -46,6 +54,7 @@
     "@types/bun": "latest",
     "@zerodev/ecdsa-validator": "^5.4.9",
     "@zerodev/sdk": "^5.5.10",
+    "tsup": "^8.5.1",
     "vitest": "^4.1.2"
   },
   "peerDependencies": {
