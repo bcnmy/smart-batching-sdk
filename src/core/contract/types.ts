@@ -60,7 +60,7 @@ export interface ContractInstance<TAbi extends Abi | readonly unknown[]> {
   >(params: {
     functionName: TFunctionName;
     args: TArgs;
-    constraints?: RuntimeConstraint[];
+    constraint?: RuntimeConstraint;
   }): RuntimeValue;
   check<
     TFunctionName extends ContractFunctionName<TAbi, 'pure' | 'view'>,
@@ -68,6 +68,6 @@ export interface ContractInstance<TAbi extends Abi | readonly unknown[]> {
   >(params: {
     functionName: TFunctionName;
     args: TArgs;
-    constraints: RuntimeConstraint[];
+    constraint: RuntimeConstraint;
   }): ComposableCall;
 }

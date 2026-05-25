@@ -231,12 +231,12 @@ describe('ERC20Token — runtimeAllowance (USDC)', () => {
 // Constraints on runtime values
 // ---------------------------------------------------------------------------
 
-describe('ERC20Token — runtimeBalance with constraints', () => {
+describe('ERC20Token — runtimeBalance with constraint', () => {
   const usdc = createERC20Token(publicClient, USDC_ADDRESS);
 
   it('gte constraint adds one constraint to inputParams[0]', () => {
     const rv = usdc.runtimeBalance({
-      constraints: [{ gte: 1_000_000n }],
+      constraint: { gte: 1_000_000n },
       owner: UNISWAP_V3_ROUTER,
     });
     expect(rv.inputParams[0].constraints).toHaveLength(1);
@@ -244,59 +244,42 @@ describe('ERC20Token — runtimeBalance with constraints', () => {
 
   it('lte constraint adds one constraint to inputParams[0]', () => {
     const rv = usdc.runtimeBalance({
-      constraints: [{ lte: 5_000_000n }],
+      constraint: { lte: 5_000_000n },
       owner: UNISWAP_V3_ROUTER,
     });
     expect(rv.inputParams[0].constraints).toHaveLength(1);
   });
 
   it('eq constraint adds one constraint to inputParams[0]', () => {
-    const rv = usdc.runtimeBalance({ constraints: [{ eq: 0n }], owner: UNISWAP_V3_ROUTER });
+    const rv = usdc.runtimeBalance({ constraint: { eq: 0n }, owner: UNISWAP_V3_ROUTER });
     expect(rv.inputParams[0].constraints).toHaveLength(1);
   });
 
-  it('multiple constraints are all added', () => {
-    const rv = usdc.runtimeBalance({
-      constraints: [{ gte: 1_000n }, { lte: 9_000n }],
-      owner: UNISWAP_V3_ROUTER,
-    });
-    expect(rv.inputParams[0].constraints).toHaveLength(2);
-  });
-
-  it('no constraints defaults to empty', () => {
+  it('no constraint defaults to empty', () => {
     const rv = usdc.runtimeBalance({ owner: UNISWAP_V3_ROUTER });
     expect(rv.inputParams[0].constraints).toHaveLength(0);
   });
 
   it('uses accountAddress as owner when owner is omitted', () => {
     const usdcWithAccount = createERC20Token(publicClient, USDC_ADDRESS, UNISWAP_V3_ROUTER);
-    const rv = usdcWithAccount.runtimeBalance({ constraints: [{ gte: 1n }] });
+    const rv = usdcWithAccount.runtimeBalance({ constraint: { gte: 1n } });
     expect(rv.inputParams[0].constraints).toHaveLength(1);
   });
 });
 
-describe('ERC20Token — runtimeAllowance with constraints', () => {
+describe('ERC20Token — runtimeAllowance with constraint', () => {
   const usdc = createERC20Token(publicClient, USDC_ADDRESS);
 
   it('gte constraint adds one constraint', () => {
     const rv = usdc.runtimeAllowance({
       spender: UNISWAP_V3_ROUTER,
-      constraints: [{ gte: 500n }],
+      constraint: { gte: 500n },
       owner: WETH_ADDRESS,
     });
     expect(rv.inputParams[0].constraints).toHaveLength(1);
   });
 
-  it('multiple constraints are all added', () => {
-    const rv = usdc.runtimeAllowance({
-      spender: UNISWAP_V3_ROUTER,
-      constraints: [{ gte: 100n }, { lte: 1_000n }, { eq: 500n }],
-      owner: WETH_ADDRESS,
-    });
-    expect(rv.inputParams[0].constraints).toHaveLength(3);
-  });
-
-  it('no constraints defaults to empty', () => {
+  it('no constraint defaults to empty', () => {
     const rv = usdc.runtimeAllowance({ spender: UNISWAP_V3_ROUTER, owner: WETH_ADDRESS });
     expect(rv.inputParams[0].constraints).toHaveLength(0);
   });
@@ -305,7 +288,7 @@ describe('ERC20Token — runtimeAllowance with constraints', () => {
     const usdcWithAccount = createERC20Token(publicClient, USDC_ADDRESS, WETH_ADDRESS);
     const rv = usdcWithAccount.runtimeAllowance({
       spender: UNISWAP_V3_ROUTER,
-      constraints: [{ gte: 1n }],
+      constraint: { gte: 1n },
     });
     expect(rv.inputParams[0].constraints).toHaveLength(1);
   });
@@ -326,7 +309,7 @@ describe('ERC20Token — check', () => {
     const call = usdc.check({
       functionName: 'balanceOf',
       args: [UNISWAP_V3_ROUTER],
-      constraints: [{ gte: 0n }],
+      constraint: { gte: 0n },
     });
     expect(typeof call.functionSig).toBe('string');
     expect(call.functionSig.length).toBeGreaterThan(0);
@@ -336,7 +319,7 @@ describe('ERC20Token — check', () => {
     const call = usdc.check({
       functionName: 'balanceOf',
       args: [UNISWAP_V3_ROUTER],
-      constraints: [{ gte: 0n }],
+      constraint: { gte: 0n },
     });
     // check() is a predicate — the calldata never executes, so functionSig is always the sentinel
     expect(call.functionSig).toBe('0x11111111');
@@ -346,7 +329,7 @@ describe('ERC20Token — check', () => {
     const call = usdc.check({
       functionName: 'allowance',
       args: [UNISWAP_V3_ROUTER, WETH_ADDRESS],
-      constraints: [{ gte: 0n }],
+      constraint: { gte: 0n },
     });
     expect(call.functionSig).toBe('0x11111111');
   });
@@ -355,12 +338,12 @@ describe('ERC20Token — check', () => {
     const a = usdc.check({
       functionName: 'balanceOf',
       args: [UNISWAP_V3_ROUTER],
-      constraints: [{ gte: 0n }],
+      constraint: { gte: 0n },
     });
     const b = usdc.check({
       functionName: 'allowance',
       args: [UNISWAP_V3_ROUTER, WETH_ADDRESS],
-      constraints: [{ gte: 0n }],
+      constraint: { gte: 0n },
     });
     expect(a.functionSig).toBe(b.functionSig);
   });
@@ -369,7 +352,7 @@ describe('ERC20Token — check', () => {
     const call = usdc.check({
       functionName: 'balanceOf',
       args: [UNISWAP_V3_ROUTER],
-      constraints: [{ gte: 0n }],
+      constraint: { gte: 0n },
     });
     expect(call.outputParams).toHaveLength(0);
   });
@@ -378,7 +361,7 @@ describe('ERC20Token — check', () => {
     const call = usdc.check({
       functionName: 'balanceOf',
       args: [UNISWAP_V3_ROUTER],
-      constraints: [{ gte: 0n }],
+      constraint: { gte: 0n },
     });
     const staticCallParam = call.inputParams.find(
       (p) => p.fetcherType === InputParamFetcherType.STATIC_CALL,
@@ -390,7 +373,7 @@ describe('ERC20Token — check', () => {
     const call = usdc.check({
       functionName: 'balanceOf',
       args: [UNISWAP_V3_ROUTER],
-      constraints: [{ gte: 1_000n }],
+      constraint: { gte: 1_000n },
     });
     const staticCallParam = call.inputParams.find(
       (p) => p.fetcherType === InputParamFetcherType.STATIC_CALL,
@@ -398,28 +381,16 @@ describe('ERC20Token — check', () => {
     expect(staticCallParam?.constraints).toHaveLength(1);
   });
 
-  it('multiple constraints are all applied to the STATIC_CALL param', () => {
-    const call = usdc.check({
-      functionName: 'balanceOf',
-      args: [UNISWAP_V3_ROUTER],
-      constraints: [{ gte: 1_000n }, { lte: 1_000_000n }],
-    });
-    const staticCallParam = call.inputParams.find(
-      (p) => p.fetcherType === InputParamFetcherType.STATIC_CALL,
-    );
-    expect(staticCallParam?.constraints).toHaveLength(2);
-  });
-
-  it('constraints do not affect paramData of the STATIC_CALL param', () => {
+  it('constraint does not affect paramData of the STATIC_CALL param', () => {
     const a = usdc.check({
       functionName: 'balanceOf',
       args: [UNISWAP_V3_ROUTER],
-      constraints: [{ gte: 999n }],
+      constraint: { gte: 999n },
     });
     const b = usdc.check({
       functionName: 'balanceOf',
       args: [UNISWAP_V3_ROUTER],
-      constraints: [{ lte: 1n }],
+      constraint: { lte: 1n },
     });
     const staticA = a.inputParams.find((p) => p.fetcherType === InputParamFetcherType.STATIC_CALL);
     const staticB = b.inputParams.find((p) => p.fetcherType === InputParamFetcherType.STATIC_CALL);
@@ -430,12 +401,12 @@ describe('ERC20Token — check', () => {
     const a = usdc.check({
       functionName: 'balanceOf',
       args: [UNISWAP_V3_ROUTER],
-      constraints: [{ gte: 0n }],
+      constraint: { gte: 0n },
     });
     const b = usdc.check({
       functionName: 'balanceOf',
       args: [WETH_ADDRESS],
-      constraints: [{ gte: 0n }],
+      constraint: { gte: 0n },
     });
     const staticA = a.inputParams.find((p) => p.fetcherType === InputParamFetcherType.STATIC_CALL);
     const staticB = b.inputParams.find((p) => p.fetcherType === InputParamFetcherType.STATIC_CALL);
@@ -446,12 +417,12 @@ describe('ERC20Token — check', () => {
     const a = usdc.check({
       functionName: 'balanceOf',
       args: [UNISWAP_V3_ROUTER],
-      constraints: [{ gte: 0n }],
+      constraint: { gte: 0n },
     });
     const b = usdc.check({
       functionName: 'balanceOf',
       args: [UNISWAP_V3_ROUTER],
-      constraints: [{ gte: 0n }],
+      constraint: { gte: 0n },
     });
     expect(a.functionSig).toBe(b.functionSig);
     expect(JSON.stringify(a.inputParams)).toBe(JSON.stringify(b.inputParams));
@@ -462,12 +433,12 @@ describe('ERC20Token — check', () => {
     const a = usdc.check({
       functionName: 'balanceOf',
       args: [UNISWAP_V3_ROUTER],
-      constraints: [{ gte: 0n }],
+      constraint: { gte: 0n },
     });
     const b = weth.check({
       functionName: 'balanceOf',
       args: [UNISWAP_V3_ROUTER],
-      constraints: [{ gte: 0n }],
+      constraint: { gte: 0n },
     });
     const staticA = a.inputParams.find((p) => p.fetcherType === InputParamFetcherType.STATIC_CALL);
     const staticB = b.inputParams.find((p) => p.fetcherType === InputParamFetcherType.STATIC_CALL);
@@ -536,30 +507,22 @@ describe('ERC20Token — write', () => {
   });
 });
 
-describe('NativeToken — runtimeBalance with constraints', () => {
+describe('NativeToken — runtimeBalance with constraint', () => {
   const native = createNativeToken(publicClient);
 
   it('gte constraint adds one constraint', () => {
-    const rv = native.runtimeBalance({ constraints: [{ gte: 1n }], address: WETH_CONTRACT });
+    const rv = native.runtimeBalance({ constraint: { gte: 1n }, address: WETH_CONTRACT });
     expect(rv.inputParams[0].constraints).toHaveLength(1);
   });
 
-  it('multiple constraints are all added', () => {
-    const rv = native.runtimeBalance({
-      constraints: [{ gte: 0n }, { lte: 100n }],
-      address: WETH_CONTRACT,
-    });
-    expect(rv.inputParams[0].constraints).toHaveLength(2);
-  });
-
-  it('no constraints defaults to empty', () => {
+  it('no constraint defaults to empty', () => {
     const rv = native.runtimeBalance({ address: WETH_CONTRACT });
     expect(rv.inputParams[0].constraints).toHaveLength(0);
   });
 
   it('uses accountAddress as target when address is omitted', () => {
     const nativeWithAccount = createNativeToken(publicClient, WETH_CONTRACT);
-    const rv = nativeWithAccount.runtimeBalance({ constraints: [{ gte: 1n }] });
+    const rv = nativeWithAccount.runtimeBalance({ constraint: { gte: 1n } });
     expect(rv.inputParams[0].constraints).toHaveLength(1);
   });
 });

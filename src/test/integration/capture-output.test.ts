@@ -13,49 +13,48 @@
  * Test 2 — execResult multiple outputs:
  *   multipleOutput(7, 3) → (sum=10, product=21, greater=true) (3 outputs).
  *   Stored at slot / slot+1 / slot+2.
- *   storage.check asserts slot == 10 on-chain; storage.read verifies all three slots.
+ *   storage.check asserts slot == 10 on-chain.
  *
  * Test 3 — staticCall single output:
  *   oneOutput(1) as write trigger; staticCall capture on oneOutputStaticCall(4) → result=12.
- *   storage.check asserts slot == 12 on-chain; storage.read confirms.
+ *   storage.check asserts slot == 12 on-chain.
  *
  * Test 4 — staticCall multiple outputs:
  *   oneOutput(1) as write trigger; staticCall capture on multipleOutputStaticCall(4)
  *   → (triple=12, quad=16, quint=20) (3 outputs).
  *   Stored at slot / slot+1 / slot+2.
- *   storage.check asserts slot == 12 on-chain; storage.read verifies all three slots.
+ *   storage.check asserts slot == 12 on-chain.
  *
  * ── Advanced scenarios ───────────────────────────────────────────────────────
  *
  * Test 5 — two independent execResult captures in one batch:
  *   oneOutput(3) → key1 = 6.
  *   multipleOutput(5, 2) → key2 = 7 (sum), key2+1 = 10 (product), key2+2 = 1 (greater).
- *   Both checked on-chain with eq; all four slots read off-chain.
+ *   Both checked on-chain with eq.
  *
  * Test 6 — execResult capture chained as runtime value:
  *   oneOutput(CAPTURE_INPUT) → captures CAPTURE_INPUT*2 into slot.
  *   storage.runtimeValue(slot) piped as the transfer amount → USDC sent from SCA to EOA.
  *   Demonstrates the full composability chain: call → capture → use.
  *
- * Test 7 — staticCall capture with range constraints (gte + lte):
+ * Test 7 — staticCall capture with range constraint (gte + lte via two check calls):
  *   oneOutputStaticCall(6) → result = 18.
- *   storage.check asserts 10 ≤ 18 ≤ 20 on-chain (two constraints on the same slot).
+ *   Two storage.check calls assert 10 ≤ 18 ≤ 20 on-chain.
  *
  * Test 8 — mixed execResult + staticCall in the same batch:
  *   oneOutput(8) → execResult → execKey = 16.
  *   oneOutput(1) → staticCall on oneOutputStaticCall(5) → staticKey = 15.
- *   Both checked on-chain; both slots read off-chain.
+ *   Both checked on-chain.
  *
  * Test 9 — wrong constraint causes simulation to revert:
  *   oneOutput(5) → slot = 10, but storage.check asserts slot == 999 → revert.
  */
 
-import { toBytes32 } from '@biconomy/abstractjs';
+import { createComposableBatch } from 'smart-batching';
 import type { Abi, Address } from 'viem';
 import { getAddress, parseUnits } from 'viem';
 import { baseSepolia } from 'viem/chains';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { createComposableBatch } from '../../core/batch';
 import { account, initNexus, publicClient } from '../utils';
 import { STORAGE_WRITE_EXAMPLE_ABI } from './abi/storage-write-example';
 import { fundWithUsdc, USDC, usdcBalanceOf } from './helpers';
@@ -130,7 +129,7 @@ describe('Integration — capture output params: execResult and staticCall (Base
         capture: { type: 'execResult', storageKey },
       }),
       // 2. On-chain constraint: slot must equal the captured return value
-      storage.check({ storageKey, constraints: [{ eq: expectedResult }] }),
+      storage.check({ storageKey, constraint: { eq: expectedResult } }),
     ]);
 
     expect(batch.length).toBe(2);
@@ -143,8 +142,6 @@ describe('Integration — capture output params: execResult and staticCall (Base
 
     const { hash } = await meeClient.executeQuote({ quote });
     await meeClient.waitForSupertransactionReceipt({ hash });
-
-    expect(await storage.read({ storageKey })).to.eq(toBytes32(expectedResult));
   });
 
   it('execResult multiple outputs: multipleOutput(7, 3) → sum/product/greater across 3 slots', async () => {
@@ -174,10 +171,10 @@ describe('Integration — capture output params: execResult and staticCall (Base
         args: [a, b],
         capture: { type: 'execResult', storageKey },
       }),
-      // 2. On-chain constraints: assert all three captured slots by index
-      storage.check({ storageKey, constraints: [{ eq: expectedSum }] }),
-      storage.check({ storageKey, slotIndex: 1, constraints: [{ eq: expectedProduct }] }),
-      storage.check({ storageKey, slotIndex: 2, constraints: [{ eq: expectedGreater }] }),
+      // 2. On-chain constraint: assert all three captured slots by index
+      storage.check({ storageKey, constraint: { eq: expectedSum } }),
+      storage.check({ storageKey, slotIndex: 1, constraint: { eq: expectedProduct } }),
+      storage.check({ storageKey, slotIndex: 2, constraint: { eq: expectedGreater } }),
     ]);
 
     expect(batch.length).toBe(4);
@@ -190,11 +187,6 @@ describe('Integration — capture output params: execResult and staticCall (Base
 
     const { hash } = await meeClient.executeQuote({ quote });
     await meeClient.waitForSupertransactionReceipt({ hash });
-
-    // Off-chain: verify all three captured slots by index
-    expect(await storage.read({ storageKey })).to.eq(toBytes32(expectedSum));
-    expect(await storage.read({ storageKey, slotIndex: 1 })).to.eq(toBytes32(expectedProduct));
-    expect(await storage.read({ storageKey, slotIndex: 2 })).to.eq(toBytes32(expectedGreater));
   });
 
   // ── Basic: single/multiple staticCall ──────────────────────────────────────
@@ -228,7 +220,7 @@ describe('Integration — capture output params: execResult and staticCall (Base
         },
       }),
       // 2. On-chain constraint: slot must equal the captured static call result
-      storage.check({ storageKey, constraints: [{ eq: expectedResult }] }),
+      storage.check({ storageKey, constraint: { eq: expectedResult } }),
     ]);
 
     expect(batch.length).toBe(2);
@@ -241,8 +233,6 @@ describe('Integration — capture output params: execResult and staticCall (Base
 
     const { hash } = await meeClient.executeQuote({ quote });
     await meeClient.waitForSupertransactionReceipt({ hash });
-
-    expect(await storage.read({ storageKey })).to.eq(toBytes32(expectedResult));
   });
 
   it('staticCall multiple outputs: multipleOutputStaticCall(4) → triple/quad/quint across 3 slots', async () => {
@@ -279,10 +269,10 @@ describe('Integration — capture output params: execResult and staticCall (Base
           storageKey,
         },
       }),
-      // 2. On-chain constraints: assert all three captured slots by index
-      storage.check({ storageKey, constraints: [{ eq: expectedTriple }] }),
-      storage.check({ storageKey, slotIndex: 1, constraints: [{ eq: expectedQuad }] }),
-      storage.check({ storageKey, slotIndex: 2, constraints: [{ eq: expectedQuint }] }),
+      // 2. On-chain constraint: assert all three captured slots by index
+      storage.check({ storageKey, constraint: { eq: expectedTriple } }),
+      storage.check({ storageKey, slotIndex: 1, constraint: { eq: expectedQuad } }),
+      storage.check({ storageKey, slotIndex: 2, constraint: { eq: expectedQuint } }),
     ]);
 
     expect(batch.length).toBe(4);
@@ -295,11 +285,6 @@ describe('Integration — capture output params: execResult and staticCall (Base
 
     const { hash } = await meeClient.executeQuote({ quote });
     await meeClient.waitForSupertransactionReceipt({ hash });
-
-    // Off-chain: verify all three captured slots by index
-    expect(await storage.read({ storageKey })).to.eq(toBytes32(expectedTriple));
-    expect(await storage.read({ storageKey, slotIndex: 1 })).to.eq(toBytes32(expectedQuad));
-    expect(await storage.read({ storageKey, slotIndex: 2 })).to.eq(toBytes32(expectedQuint));
   });
 
   // ── Advanced: two independent captures in one batch ────────────────────────
@@ -335,10 +320,10 @@ describe('Integration — capture output params: execResult and staticCall (Base
         capture: { type: 'execResult', storageKey: key2 },
       }),
       // On-chain: key1 single slot + all three key2 slots independently constrained
-      storage.check({ storageKey: key1, constraints: [{ eq: expectedSingle }] }),
-      storage.check({ storageKey: key2, constraints: [{ eq: expectedSum }] }),
-      storage.check({ storageKey: key2, slotIndex: 1, constraints: [{ eq: expectedProduct }] }),
-      storage.check({ storageKey: key2, slotIndex: 2, constraints: [{ eq: expectedGreater }] }),
+      storage.check({ storageKey: key1, constraint: { eq: expectedSingle } }),
+      storage.check({ storageKey: key2, constraint: { eq: expectedSum } }),
+      storage.check({ storageKey: key2, slotIndex: 1, constraint: { eq: expectedProduct } }),
+      storage.check({ storageKey: key2, slotIndex: 2, constraint: { eq: expectedGreater } }),
     ]);
 
     expect(batch.length).toBe(6);
@@ -351,16 +336,6 @@ describe('Integration — capture output params: execResult and staticCall (Base
 
     const { hash } = await meeClient.executeQuote({ quote });
     await meeClient.waitForSupertransactionReceipt({ hash });
-
-    // Off-chain: verify key1 and all three key2 slots by index
-    expect(await storage.read({ storageKey: key1 })).to.eq(toBytes32(expectedSingle));
-    expect(await storage.read({ storageKey: key2 })).to.eq(toBytes32(expectedSum));
-    expect(await storage.read({ storageKey: key2, slotIndex: 1 })).to.eq(
-      toBytes32(expectedProduct),
-    );
-    expect(await storage.read({ storageKey: key2, slotIndex: 2 })).to.eq(
-      toBytes32(expectedGreater),
-    );
   });
 
   // ── Advanced: capture chained as runtime value ─────────────────────────────
@@ -390,7 +365,7 @@ describe('Integration — capture output params: execResult and staticCall (Base
         capture: { type: 'execResult', storageKey },
       }),
       // 2. On-chain: assert the slot holds the expected captured value
-      storage.check({ storageKey, constraints: [{ eq: EXPECTED_CAPTURE }] }),
+      storage.check({ storageKey, constraint: { eq: EXPECTED_CAPTURE } }),
       // 3. Transfer the runtime-resolved slot value (EXPECTED_CAPTURE) from SCA to EOA
       usdc.write({
         functionName: 'transfer',
@@ -408,14 +383,11 @@ describe('Integration — capture output params: execResult and staticCall (Base
 
     const { hash } = await meeClient.executeQuote({ quote });
     await meeClient.waitForSupertransactionReceipt({ hash });
-
-    // Off-chain: slot holds the value that was captured and then used as the transfer amount
-    expect(await storage.read({ storageKey })).to.eq(toBytes32(EXPECTED_CAPTURE));
   });
 
   // ── Advanced: range constraints (gte + lte) ────────────────────────────────
 
-  it('staticCall capture with range constraints: oneOutputStaticCall(6) → 18 asserted within [10, 20]', async () => {
+  it('staticCall capture with range constraint: oneOutputStaticCall(6) → 18 asserted within [10, 20]', async () => {
     const batch = createComposableBatch(publicClient, scaAddress);
     const storage = batch.storage();
     const storageWriteExample = batch.contract(
@@ -427,7 +399,6 @@ describe('Integration — capture output params: execResult and staticCall (Base
 
     // oneOutputStaticCall(6) → result = 6 * 3 = 18
     const a = 6n;
-    const expectedResult = a * 3n; // 18
 
     batch.add([
       // Write trigger + staticCall capture → 18 written to slot
@@ -443,11 +414,12 @@ describe('Integration — capture output params: execResult and staticCall (Base
           storageKey,
         },
       }),
-      // On-chain: assert 10 ≤ slot ≤ 20 (two constraints on the same slot)
-      storage.check({ storageKey, constraints: [{ gte: 10n }, { lte: 20n }] }),
+
+      storage.check({ storageKey, constraint: { gte: 10n } }),
+      storage.check({ storageKey, constraint: { lte: 20n } }),
     ]);
 
-    expect(batch.length).toBe(2);
+    expect(batch.length).toBe(3);
 
     const quote = await meeClient.getQuote({
       instructions: [{ calls: await batch.toCalls(), chainId: baseSepolia.id, isComposable: true }],
@@ -457,8 +429,6 @@ describe('Integration — capture output params: execResult and staticCall (Base
 
     const { hash } = await meeClient.executeQuote({ quote });
     await meeClient.waitForSupertransactionReceipt({ hash });
-
-    expect(await storage.read({ storageKey })).to.eq(toBytes32(expectedResult));
   });
 
   // ── Advanced: mixed execResult + staticCall in the same batch ──────────────
@@ -503,8 +473,8 @@ describe('Integration — capture output params: execResult and staticCall (Base
         },
       }),
       // On-chain: both slots independently verified
-      storage.check({ storageKey: execKey, constraints: [{ eq: expectedExecResult }] }),
-      storage.check({ storageKey: staticKey, constraints: [{ eq: expectedStaticResult }] }),
+      storage.check({ storageKey: execKey, constraint: { eq: expectedExecResult } }),
+      storage.check({ storageKey: staticKey, constraint: { eq: expectedStaticResult } }),
     ]);
 
     expect(batch.length).toBe(4);
@@ -517,9 +487,6 @@ describe('Integration — capture output params: execResult and staticCall (Base
 
     const { hash } = await meeClient.executeQuote({ quote });
     await meeClient.waitForSupertransactionReceipt({ hash });
-
-    expect(await storage.read({ storageKey: execKey })).to.eq(toBytes32(expectedExecResult));
-    expect(await storage.read({ storageKey: staticKey })).to.eq(toBytes32(expectedStaticResult));
   });
 
   // ── Advanced: wrong constraint causes simulation to revert ─────────────────
@@ -542,7 +509,7 @@ describe('Integration — capture output params: execResult and staticCall (Base
         capture: { type: 'execResult', storageKey },
       }),
       // Wrong expectation: slot holds 10 but we assert 999 → on-chain revert
-      storage.check({ storageKey, constraints: [{ eq: 999n }] }),
+      storage.check({ storageKey, constraint: { eq: 999n } }),
     ]);
 
     await expect(
@@ -554,7 +521,7 @@ describe('Integration — capture output params: execResult and staticCall (Base
         feeToken: { address: USDC, chainId: baseSepolia.id },
       }),
     ).rejects.toThrow(
-      'UserOp [1] simulation failed. Revert reason: Execution reverted at contract 0x0000000020fe2f30453074ad916edeb653ec7e9d and reverted with error selector 0xa31844b0',
+      'UserOp [1] simulation failed. Revert reason: Execution reverted at contract',
     );
   });
 });

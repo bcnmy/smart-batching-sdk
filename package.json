@@ -1,19 +1,52 @@
 {
-  "name": "composable-sdk",
-  "module": "index.ts",
+  "name": "smart-batching",
+  "version": "0.0.0",
+  "description": "Build composable ERC-8211 transaction batches with runtime values, on-chain constraints, and atomic pre/post conditions for EVM smart accounts.",
+  "author": "Biconomy",
+  "license": "MIT",
+  "repository": "github:bcnmy/composable-sdk",
+  "homepage": "https://erc8211.com/",
+  "keywords": [
+    "erc-8211",
+    "composable",
+    "composability",
+    "smart account",
+    "chain abstraction",
+    "gas abstraction",
+    "account abstraction",
+    "biconomy",
+    "sdk"
+  ],
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "typings": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
   "scripts": {
     "lint": "biome lint --write .",
     "format": "biome format --write .",
     "check": "biome check --write .",
-    "build": "tsc --noEmit",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "release": "changeset publish",
+    "release": "bun run build && changeset publish",
     "version": "changeset version"
   },
   "devDependencies": {
-    "@biconomy/abstractjs": "^1.2.3",
+    "@biconomy/abstractjs": "^1.2.4",
     "@biomejs/biome": "2.4.9",
     "@changesets/cli": "2.30.0",
     "@commitlint/cli": "^20.5.0",
@@ -21,6 +54,7 @@
     "@types/bun": "latest",
     "@zerodev/ecdsa-validator": "^5.4.9",
     "@zerodev/sdk": "^5.5.10",
+    "tsup": "^8.5.1",
     "vitest": "^4.1.2"
   },
   "peerDependencies": {

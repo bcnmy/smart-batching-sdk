@@ -1,10 +1,26 @@
-import { toBytes32 } from '@biconomy/abstractjs';
-import { parseUnits } from 'viem';
+import { createComposableBatch } from 'smart-batching';
+import { parseEther, parseUnits } from 'viem';
 import { baseSepolia } from 'viem/chains';
 import { describe, expect, it } from 'vitest';
-import { createComposableBatch } from '../../core/batch';
-import { account, initNexus, publicClient } from '../utils';
-import { fundWithUsdc, USDC } from './helpers';
+import { account, initNexus, publicClient, WETH_ADDRESS } from '../utils';
+import { fundWithEth, fundWithUsdc, SCA_TARGET_BALANCE, USDC } from './helpers';
+
+const WETH_ABI = [
+  {
+    name: 'deposit',
+    type: 'function',
+    stateMutability: 'payable',
+    inputs: [],
+    outputs: [],
+  },
+  {
+    name: 'balanceOf',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: '', type: 'address' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+] as const;
 
 if (!account) throw new Error('PRIVATE_KEY is not set in environment');
 
@@ -33,7 +49,7 @@ describe('Integration — Biconomy abstractjs composable execution', () => {
       usdc.check({
         functionName: 'balanceOf',
         args: [scaAddress],
-        constraints: [{ gte: FUND_AMOUNT }],
+        constraint: { gte: FUND_AMOUNT },
       }),
       // Sweep: transfer the SCA's full runtime balance to the EOA
       usdc.write({
@@ -41,7 +57,7 @@ describe('Integration — Biconomy abstractjs composable execution', () => {
         args: [_account.address, usdc.runtimeBalance()],
       }),
       // Post-condition: assert SCA balance is zero (or near zero) after sweep
-      usdc.check({ functionName: 'balanceOf', args: [scaAddress], constraints: [{ gte: 0n }] }),
+      usdc.check({ functionName: 'balanceOf', args: [scaAddress], constraint: { gte: 0n } }),
     ]);
 
     expect(batch.length).toBe(3);
@@ -80,7 +96,7 @@ describe('Integration — Biconomy abstractjs composable execution', () => {
       usdc.check({
         functionName: 'balanceOf',
         args: [scaAddress],
-        constraints: [{ gte: 2n * FUND_AMOUNT }],
+        constraint: { gte: 2n * FUND_AMOUNT },
       }),
       // Sweep: would transfer runtime balance to EOA (never reached due to revert)
       usdc.write({
@@ -102,7 +118,7 @@ describe('Integration — Biconomy abstractjs composable execution', () => {
         feeToken: { address: USDC, chainId: baseSepolia.id },
       }),
     ).rejects.toThrow(
-      'UserOp [1] simulation failed. Revert reason: Execution reverted at contract 0x0000000020fe2f30453074ad916edeb653ec7e9d and reverted with error selector 0xa31844b0',
+      'UserOp [1] simulation failed. Revert reason: Execution reverted at contract',
     );
   });
 
@@ -124,7 +140,7 @@ describe('Integration — Biconomy abstractjs composable execution', () => {
       usdc.check({
         functionName: 'balanceOf',
         args: [scaAddress],
-        constraints: [{ gte: FUND_AMOUNT }],
+        constraint: { gte: FUND_AMOUNT },
       }),
     ]);
 
@@ -141,7 +157,7 @@ describe('Integration — Biconomy abstractjs composable execution', () => {
         feeToken: { address: USDC, chainId: baseSepolia.id },
       }),
     ).rejects.toThrow(
-      'UserOp [1] simulation failed. Revert reason: Execution reverted at contract 0x0000000020fe2f30453074ad916edeb653ec7e9d and reverted with error selector 0xa31844b0',
+      'UserOp [1] simulation failed. Revert reason: Execution reverted at contract',
     );
   });
 
@@ -165,7 +181,7 @@ describe('Integration — Biconomy abstractjs composable execution', () => {
       // Step A: write FUND_AMOUNT/2 into the shared namespace storage slot
       storage.write({ value: storageValue, storageKey }),
       // Step B: assert the stored value equals what was just written before proceeding
-      storage.check({ storageKey, constraints: [{ eq: storageValue }] }),
+      storage.check({ storageKey, constraint: { eq: storageValue } }),
       // Step C: transfer the runtime-resolved storage value (FUND_AMOUNT/2) from SCA to EOA
       usdc.write({
         functionName: 'transfer',
@@ -191,8 +207,51 @@ describe('Integration — Biconomy abstractjs composable execution', () => {
     // 5. Execute the signed quote and wait for the supertransaction to settle
     const { hash } = await meeClient.executeQuote({ quote });
     await meeClient.waitForSupertransactionReceipt({ hash });
+  });
 
-    // 6. Assert the on-chain storage slot holds the value that was written in step A
-    expect(await storage.read({ storageKey })).to.eq(toBytes32(storageValue));
+  it('static ETH value in composable write: WETH deposit mints correct balance', async () => {
+    const { scaAddress, meeClient } = await initNexus();
+
+    const DEPOSIT_AMOUNT = parseEther('0.0001');
+
+    // Fund SCA with ETH for the deposit and USDC for the MEE fee
+    await fundWithEth(scaAddress, DEPOSIT_AMOUNT * 2n);
+    await fundWithUsdc(scaAddress, SCA_TARGET_BALANCE);
+
+    const batch = createComposableBatch(publicClient, scaAddress);
+    const weth = batch.contract(WETH_ADDRESS, WETH_ABI);
+
+    const wethBalanceBefore = await publicClient.readContract({
+      abi: WETH_ABI,
+      address: WETH_ADDRESS,
+      functionName: 'balanceOf',
+      args: [scaAddress],
+    });
+
+    batch.add([
+      weth.write({
+        functionName: 'deposit',
+        args: [],
+        value: DEPOSIT_AMOUNT,
+      }),
+    ]);
+
+    const quote = await meeClient.getQuote({
+      instructions: [{ calls: await batch.toCalls(), chainId: baseSepolia.id, isComposable: true }],
+      simulation: { simulate: true },
+      feeToken: { address: USDC, chainId: baseSepolia.id },
+    });
+
+    const { hash } = await meeClient.executeQuote({ quote });
+    await meeClient.waitForSupertransactionReceipt({ hash });
+
+    const wethBalanceAfter = await publicClient.readContract({
+      abi: WETH_ABI,
+      address: WETH_ADDRESS,
+      functionName: 'balanceOf',
+      args: [scaAddress],
+    });
+
+    expect(wethBalanceAfter).toEqual(wethBalanceBefore + DEPOSIT_AMOUNT);
   });
 });

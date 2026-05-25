@@ -1,3 +1,12 @@
+// Reusable ABI shape for a Constraint struct — used when ABI-encoding OR sub-constraints
+export const CONSTRAINT_TUPLE_ABI = {
+  type: 'tuple[]',
+  components: [
+    { name: 'constraintType', type: 'uint8' },
+    { name: 'referenceData', type: 'bytes' },
+  ],
+} as const;
+
 export const COMPOSABILITY_MODULE_ABI_V1_1_0 = [
   {
     type: 'constructor',

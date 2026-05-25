@@ -64,7 +64,7 @@ export async function initNexus() {
       {
         chain: baseSepolia,
         transport,
-        version: getMEEVersion(MEEVersion.V2_2_1),
+        version: getMEEVersion(MEEVersion.V2_2_2),
       },
     ],
   });

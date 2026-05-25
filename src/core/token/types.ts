@@ -13,13 +13,13 @@ export type ERC20Abi = typeof erc20Abi;
 
 export interface ERC20RuntimeBalanceParams {
   owner?: Address;
-  constraints?: RuntimeConstraint[];
+  constraint?: RuntimeConstraint;
 }
 
 export interface ERC20RuntimeAllowanceParams {
   spender: Address;
   owner?: Address;
-  constraints?: RuntimeConstraint[];
+  constraint?: RuntimeConstraint;
 }
 
 export interface NativeBalanceParams {
@@ -28,7 +28,7 @@ export interface NativeBalanceParams {
 
 export interface NativeRuntimeBalanceParams {
   address?: Address;
-  constraints?: RuntimeConstraint[];
+  constraint?: RuntimeConstraint;
 }
 
 export interface ERC20TokenInstance {
@@ -62,7 +62,7 @@ export interface ERC20TokenInstance {
   >(params: {
     functionName: TFunctionName;
     args: TArgs;
-    constraints: RuntimeConstraint[];
+    constraint: RuntimeConstraint;
   }): ComposableCall;
   runtimeBalance(params?: ERC20RuntimeBalanceParams): RuntimeValue;
   runtimeAllowance(params: ERC20RuntimeAllowanceParams): RuntimeValue;

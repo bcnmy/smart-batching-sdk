@@ -7,7 +7,6 @@ import { getStorageNamespace, getStorageSlot, getStorageSlotKey } from './slot';
 import type {
   CheckStorageParams,
   GetStorageKeyParams,
-  ReadStorageParams,
   RuntimeValueStorageParams,
   StorageInstance,
   WriteStorageParams,
@@ -40,29 +39,6 @@ export function createStorage<
       return getStorageSlotKey(resolvedAccountAddress, resolvedCallerAddress);
     },
 
-    async read({
-      storageKey,
-      slotIndex = 0,
-      accountAddress: accountAddressOverride,
-      callerAddress: callerAddressOverride,
-    }: ReadStorageParams = {}) {
-      const resolvedAccountAddress = accountAddressOverride ?? accountAddress;
-      const resolvedCallerAddress = callerAddressOverride ?? resolvedAccountAddress;
-
-      const slot = await getStorageSlot(
-        resolvedAccountAddress,
-        resolvedCallerAddress,
-        storageKey,
-        slotIndex,
-      );
-      const namespace = getStorageNamespace(resolvedAccountAddress, resolvedCallerAddress);
-
-      return contractInstance.read({
-        functionName: 'readStorage',
-        args: [namespace, slot],
-      }) as Promise<`0x${string}`>;
-    },
-
     async write({
       value,
       storageKey,
@@ -87,7 +63,7 @@ export function createStorage<
     },
 
     async runtimeValue({
-      constraints,
+      constraint,
       storageKey,
       slotIndex = 0,
       accountAddress: accountAddressOverride,
@@ -107,12 +83,12 @@ export function createStorage<
       return contractInstance.runtimeValue({
         functionName: 'readStorage',
         args: [namespace, slot],
-        constraints,
+        constraint,
       });
     },
 
     async check({
-      constraints,
+      constraint,
       storageKey,
       slotIndex = 0,
       accountAddress: accountAddressOverride,
@@ -132,7 +108,7 @@ export function createStorage<
       return contractInstance.check({
         functionName: 'readStorage',
         args: [namespace, slot],
-        constraints,
+        constraint,
       });
     },
   };

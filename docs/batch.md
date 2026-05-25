@@ -7,7 +7,7 @@
 ## createComposableBatch
 
 ```ts
-import { createComposableBatch } from 'composable-sdk';
+import { createComposableBatch } from 'smart-batching';
 
 const batch = createComposableBatch(publicClient, accountAddress);
 ```
@@ -126,7 +126,7 @@ batch.add([
   usdc.check({
     functionName: 'balanceOf',
     args: ['0xRecipientAddress'],
-    constraints: [{ gte: amount }],
+    constraint: { gte: amount },
   }),
   usdc.write({ functionName: 'transfer', args: ['0xRecipientAddress', amount] }),
 ]);

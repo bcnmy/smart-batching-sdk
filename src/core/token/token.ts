@@ -38,22 +38,22 @@ export function createERC20Token<
     write({ functionName, args, value, capture }) {
       return contractInstance.write({ functionName, args, value, capture });
     },
-    check({ functionName, args, constraints }) {
-      return contractInstance.check({ functionName, args, constraints });
+    check({ functionName, args, constraint }) {
+      return contractInstance.check({ functionName, args, constraint });
     },
-    runtimeBalance({ owner, constraints } = {}) {
+    runtimeBalance({ owner, constraint } = {}) {
       return runtimeERC20BalanceOf({
         targetAddress: resolveAddress(owner, accountAddress, 'owner'),
         tokenAddress: address,
-        constraints: toConstraintFields(constraints ?? []),
+        constraints: toConstraintFields(constraint),
       });
     },
-    runtimeAllowance({ spender, owner, constraints }) {
+    runtimeAllowance({ spender, owner, constraint }) {
       return runtimeERC20AllowanceOf({
         owner: resolveAddress(owner, accountAddress, 'owner'),
         spender,
         tokenAddress: address,
-        constraints: toConstraintFields(constraints ?? []),
+        constraints: toConstraintFields(constraint),
       });
     },
   };
@@ -69,10 +69,10 @@ export function createNativeToken<
         address: resolveAddress(address, accountAddress, 'address'),
       });
     },
-    runtimeBalance({ address, constraints } = {}) {
+    runtimeBalance({ address, constraint } = {}) {
       return runtimeNativeBalanceOf({
         targetAddress: resolveAddress(address, accountAddress, 'address'),
-        constraints: toConstraintFields(constraints ?? []),
+        constraints: toConstraintFields(constraint),
       });
     },
   };

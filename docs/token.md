@@ -104,7 +104,7 @@ Reads a view function on-chain during execution and asserts its return value aga
 check(params: {
   functionName: string;
   args: TArgs;
-  constraints: RuntimeConstraint[];  // [{ eq }, { gte }, or { lte }]
+  constraint: RuntimeConstraint;  // { eq }, { gte }, { lte }, { gteSigned }, { lteSigned }, or { or: [...] }
 }): ComposableCall
 ```
 
@@ -114,7 +114,7 @@ batch.add(
   usdc.check({
     functionName: 'balanceOf',
     args: ['0xSmartAccountAddress'],
-    constraints: [{ gte: parseUnits('50', 6) }],
+    constraint: { gte: parseUnits('50', 6) },
   }),
 );
 
@@ -123,19 +123,23 @@ batch.add(
   usdc.check({
     functionName: 'balanceOf',
     args: ['0xRecipientAddress'],
-    constraints: [{ gte: parseUnits('10', 6) }],
+    constraint: { gte: parseUnits('10', 6) },
   }),
 );
 
-// Range check: balance must be between 10 and 1000 USDC
+// Range check: balance must be between 10 and 1000 USDC — use two separate check() calls
 batch.add(
   usdc.check({
     functionName: 'balanceOf',
     args: ['0xSmartAccountAddress'],
-    constraints: [
-      { gte: parseUnits('10', 6) },
-      { lte: parseUnits('1000', 6) },
-    ],
+    constraint: { gte: parseUnits('10', 6) },
+  }),
+);
+batch.add(
+  usdc.check({
+    functionName: 'balanceOf',
+    args: ['0xSmartAccountAddress'],
+    constraint: { lte: parseUnits('1000', 6) },
   }),
 );
 ```
@@ -149,7 +153,7 @@ Returns a `RuntimeValue` that resolves to the live ERC-20 balance of an address 
 ```ts
 runtimeBalance(params?: {
   owner?: Address;        // defaults to the batch's accountAddress
-  constraints?: RuntimeConstraint[];
+  constraint?: RuntimeConstraint;
 }): RuntimeValue
 ```
 
@@ -176,7 +180,7 @@ batch.add(
     functionName: 'transfer',
     args: [
       '0xRecipientAddress',
-      usdc.runtimeBalance({ constraints: [{ gte: parseUnits('5', 6) }] }),
+      usdc.runtimeBalance({ constraint: { gte: parseUnits('5', 6) } }),
     ],
   }),
 );
@@ -192,7 +196,7 @@ Returns a `RuntimeValue` that resolves to the live ERC-20 allowance at execution
 runtimeAllowance(params: {
   spender: Address;
   owner?: Address;        // defaults to the batch's accountAddress
-  constraints?: RuntimeConstraint[];
+  constraint?: RuntimeConstraint;
 }): RuntimeValue
 ```
 
@@ -243,7 +247,7 @@ Returns a `RuntimeValue` that resolves to the live native ETH balance at executi
 ```ts
 runtimeBalance(params?: {
   address?: Address;      // defaults to the batch's accountAddress
-  constraints?: RuntimeConstraint[];
+  constraint?: RuntimeConstraint;
 }): RuntimeValue
 ```
 
@@ -263,7 +267,7 @@ batch.add(
 batch.add(
   vault.write({
     functionName: 'deposit',
-    args: [eth.runtimeBalance({ constraints: [{ gte: parseEther('0.1') }] })],
+    args: [eth.runtimeBalance({ constraint: { gte: parseEther('0.1') } })],
   }),
 );
 ```
@@ -272,7 +276,9 @@ batch.add(
 
 ## RuntimeConstraint
 
-All runtime methods (`runtimeBalance`, `runtimeAllowance`, `runtimeValue`, `check`) accept constraints as `RuntimeConstraint[]`.
+All runtime methods (`runtimeBalance`, `runtimeAllowance`, `runtimeValue`, `check`) accept a single `RuntimeConstraint`.
+
+**Standard constraints** (unsigned — value is treated as `uint256`):
 
 | Shape | Description |
 |---|---|
@@ -280,4 +286,38 @@ All runtime methods (`runtimeBalance`, `runtimeAllowance`, `runtimeValue`, `chec
 | `{ gte: value }` | Resolved value must be ≥ `value` |
 | `{ lte: value }` | Resolved value must be ≤ `value` |
 
-The `value` in each constraint can be `bigint`, `boolean`, `Hex`, or `Address`. Constraints can be combined — all must pass.
+The `value` can be `bigint`, `boolean`, `Hex`, or `Address`.
+
+**Signed constraints** (value is treated as `int256`; use when the resolved value may be negative):
+
+| Shape | Description |
+|---|---|
+| `{ gteSigned: value }` | Resolved value (as `int256`) must be ≥ `value` |
+| `{ lteSigned: value }` | Resolved value (as `int256`) must be ≤ `value` |
+
+The `value` must be a `bigint` (negative bigints are valid).
+
+**OR constraint** (passes if at least one child constraint passes):
+
+| Shape | Description |
+|---|---|
+| `{ or: ChildConstraint[] }` | Passes if **any one** of the listed child constraints passes |
+
+Children inside `or` must be standard or signed constraints — nested `or` is not supported.
+
+To require multiple conditions simultaneously, make multiple separate `check()` / `runtimeValue()` calls — each gets its own constraint. Examples:
+
+```ts
+// Single constraint
+constraint: { gte: parseUnits('10', 6) }
+
+// Signed constraint (e.g. a price delta that may be negative)
+constraint: { gteSigned: -100n }
+
+// OR: balance must be exactly 0 OR at least 10 USDC
+constraint: { or: [{ eq: 0n }, { gte: parseUnits('10', 6) }] }
+
+// Range check: use two separate check() calls
+batch.add(usdc.check({ functionName: 'balanceOf', args: [owner], constraint: { gte: parseUnits('10', 6) } }));
+batch.add(usdc.check({ functionName: 'balanceOf', args: [owner], constraint: { lte: parseUnits('1000', 6) } }));
+```

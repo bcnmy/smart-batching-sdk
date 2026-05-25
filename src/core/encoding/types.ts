@@ -64,6 +64,9 @@ export const ConstraintType = {
   GTE: 1,
   LTE: 2,
   IN: 3,
+  GTE_SIGNED: 4,
+  LTE_SIGNED: 5,
+  OR: 6,
 } as const;
 
 export type InputParamFetcherType =
@@ -101,13 +104,24 @@ export interface ConstraintField {
 type ConstraintValue = bigint | boolean | Hex | Address;
 
 /**
- * User-facing constraint format. Pass as the optional last argument to any runtimeXxx method.
- * @example [{ gte: 1000n }, { lte: 5000n }]
+ * A single-value constraint. These are the only types allowed inside an OR group.
+ * OR cannot be nested inside another OR.
  */
-export type RuntimeConstraint =
+export type ChildConstraint =
   | { gte: ConstraintValue }
   | { lte: ConstraintValue }
-  | { eq: ConstraintValue };
+  | { eq: ConstraintValue }
+  | { gteSigned: bigint }
+  | { lteSigned: bigint };
+
+/**
+ * User-facing constraint format. Pass as the `constraint` argument to any runtimeXxx or check method.
+ * OR evaluates its sub-constraints and passes if at least one is satisfied.
+ * OR cannot be nested inside another OR.
+ * @example { gte: 1000n }
+ * @example { or: [{ eq: 0n }, { gte: 100n }] }
+ */
+export type RuntimeConstraint = ChildConstraint | { or: ChildConstraint[] };
 
 export interface RuntimeParamViaCustomStaticCallParams {
   targetContractAddress: Address;

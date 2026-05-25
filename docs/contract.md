@@ -165,7 +165,7 @@ Returns a `RuntimeValue` that resolves to the return value of a view function at
 runtimeValue(params: {
   functionName: string;
   args: TArgs;
-  constraints?: RuntimeConstraint[];
+  constraint?: RuntimeConstraint;
 }): RuntimeValue
 ```
 
@@ -187,18 +187,35 @@ batch.add(
 );
 ```
 
-**With constraints** — the call reverts if the resolved value does not satisfy all constraints:
+**With a constraint** — the call reverts if the resolved value does not satisfy the constraint:
 
 ```ts
 oracle.runtimeValue({
   functionName: 'latestPrice',
   args: [],
-  constraints: [
-    { gte: parseUnits('1000', 8) },  // price must be >= 1000
-    { lte: parseUnits('5000', 8) },  // price must be <= 5000
-  ],
+  constraint: { gte: parseUnits('1000', 8) },  // price must be >= 1000
 })
 ```
+
+```ts
+// Signed constraint — useful when the resolved value may be negative
+oracle.runtimeValue({
+  functionName: 'priceDelta',
+  args: [],
+  constraint: { gteSigned: -500n },
+})
+```
+
+```ts
+// OR constraint — passes if any one child passes
+oracle.runtimeValue({
+  functionName: 'score',
+  args: [],
+  constraint: { or: [{ eq: 0n }, { gte: 100n }] },
+})
+```
+
+See [RuntimeConstraint reference](./token.md#runtimeconstraint) for all available constraint shapes.
 
 ---
 
@@ -210,7 +227,7 @@ Calls a view function on-chain during execution and asserts its return value. If
 check(params: {
   functionName: string;
   args: TArgs;
-  constraints: RuntimeConstraint[];
+  constraint: RuntimeConstraint;
 }): ComposableCall
 ```
 
@@ -222,7 +239,7 @@ batch.add(
   pool.check({
     functionName: 'getLiquidity',
     args: [],
-    constraints: [{ gte: parseUnits('10000', 6) }],
+    constraint: { gte: parseUnits('10000', 6) },
   }),
 );
 
@@ -231,7 +248,27 @@ batch.add(
   pool.check({
     functionName: 'balanceOf',
     args: ['0xTokenAddress'],
-    constraints: [{ eq: 0n }],
+    constraint: { eq: 0n },
+  }),
+);
+
+// Signed constraint — assert a signed delta is within acceptable bounds
+batch.add(
+  pool.check({
+    functionName: 'priceDelta',
+    args: [],
+    constraint: { gteSigned: -500n },
+  }),
+);
+
+// OR constraint — passes if any one child passes
+batch.add(
+  pool.check({
+    functionName: 'getLiquidity',
+    args: [],
+    constraint: { or: [{ eq: 0n }, { gte: parseUnits('10000', 6) }] },
   }),
 );
 ```
+
+See [RuntimeConstraint reference](./token.md#runtimeconstraint) for all available constraint shapes.

@@ -1,4 +1,4 @@
-# composable-sdk
+# smart-batching
 
 ## Installation
 

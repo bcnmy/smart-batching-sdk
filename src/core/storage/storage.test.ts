@@ -199,22 +199,6 @@ describe('storage — write', () => {
 });
 
 // ---------------------------------------------------------------------------
-// storage — read
-// ---------------------------------------------------------------------------
-// readStorage is publicly readable by anyone — only writes are access-guarded.
-// The contract reverts when reading a slot that has never been written to.
-// Live read of an initialized slot is covered by the integration test.
-
-describe('storage — read', () => {
-  const instance = createStorage(publicClient, ACCOUNT);
-
-  it('rejects for an uninitialized slot', async () => {
-    // The contract reverts when the slot has no data written to it yet
-    await expect(instance.read({ storageKey: 999999999999999n })).rejects.toThrow();
-  });
-});
-
-// ---------------------------------------------------------------------------
 // storage — runtimeValue
 // ---------------------------------------------------------------------------
 
@@ -244,27 +228,19 @@ describe('storage — runtimeValue', () => {
     expect(rv.outputParams).toHaveLength(0);
   });
 
-  it('no constraints defaults to empty constraints array', async () => {
+  it('no constraint defaults to empty constraints array', async () => {
     const rv = await instance.runtimeValue({ storageKey: 1n });
     expect(rv.inputParams[0].constraints).toHaveLength(0);
   });
 
   it('gte constraint is applied', async () => {
-    const rv = await instance.runtimeValue({ storageKey: 1n, constraints: [{ gte: 0n }] });
+    const rv = await instance.runtimeValue({ storageKey: 1n, constraint: { gte: 0n } });
     expect(rv.inputParams[0].constraints).toHaveLength(1);
   });
 
-  it('multiple constraints are all applied', async () => {
-    const rv = await instance.runtimeValue({
-      storageKey: 1n,
-      constraints: [{ gte: 1n }, { lte: 100n }],
-    });
-    expect(rv.inputParams[0].constraints).toHaveLength(2);
-  });
-
-  it('constraints do not affect paramData', async () => {
+  it('constraint does not affect paramData', async () => {
     const [withConstraint, withoutConstraint] = await Promise.all([
-      instance.runtimeValue({ storageKey: 1n, constraints: [{ gte: 99n }] }),
+      instance.runtimeValue({ storageKey: 1n, constraint: { gte: 99n } }),
       instance.runtimeValue({ storageKey: 1n }),
     ]);
     expect(withConstraint.inputParams[0].paramData).toBe(
@@ -297,18 +273,18 @@ describe('storage — check', () => {
   const instance = createStorage(publicClient, ACCOUNT);
 
   it('returns a ComposableCall with a functionSig', async () => {
-    const call = await instance.check({ constraints: [{ gte: 0n }], storageKey: 1n });
+    const call = await instance.check({ constraint: { gte: 0n }, storageKey: 1n });
     expect(typeof call.functionSig).toBe('string');
     expect(call.functionSig.length).toBeGreaterThan(0);
   });
 
   it('outputParams is empty', async () => {
-    const call = await instance.check({ constraints: [{ gte: 0n }], storageKey: 1n });
+    const call = await instance.check({ constraint: { gte: 0n }, storageKey: 1n });
     expect(call.outputParams).toHaveLength(0);
   });
 
   it('inputParams contains a STATIC_CALL param', async () => {
-    const call = await instance.check({ constraints: [{ gte: 0n }], storageKey: 1n });
+    const call = await instance.check({ constraint: { gte: 0n }, storageKey: 1n });
     const staticCallParam = call.inputParams.find(
       (p) => p.fetcherType === InputParamFetcherType.STATIC_CALL,
     );
@@ -316,28 +292,17 @@ describe('storage — check', () => {
   });
 
   it('one constraint is applied to the STATIC_CALL param', async () => {
-    const call = await instance.check({ constraints: [{ gte: 1000n }], storageKey: 1n });
+    const call = await instance.check({ constraint: { gte: 1000n }, storageKey: 1n });
     const staticCallParam = call.inputParams.find(
       (p) => p.fetcherType === InputParamFetcherType.STATIC_CALL,
     );
     expect(staticCallParam?.constraints).toHaveLength(1);
   });
 
-  it('multiple constraints are all applied', async () => {
-    const call = await instance.check({
-      constraints: [{ gte: 1n }, { lte: 100n }],
-      storageKey: 1n,
-    });
-    const staticCallParam = call.inputParams.find(
-      (p) => p.fetcherType === InputParamFetcherType.STATIC_CALL,
-    );
-    expect(staticCallParam?.constraints).toHaveLength(2);
-  });
-
-  it('constraints do not affect paramData of the STATIC_CALL param', async () => {
+  it('constraint does not affect paramData of the STATIC_CALL param', async () => {
     const [a, b] = await Promise.all([
-      instance.check({ constraints: [{ gte: 999n }], storageKey: 1n }),
-      instance.check({ constraints: [{ lte: 1n }], storageKey: 1n }),
+      instance.check({ constraint: { gte: 999n }, storageKey: 1n }),
+      instance.check({ constraint: { lte: 1n }, storageKey: 1n }),
     ]);
     const staticA = a.inputParams.find((p) => p.fetcherType === InputParamFetcherType.STATIC_CALL);
     const staticB = b.inputParams.find((p) => p.fetcherType === InputParamFetcherType.STATIC_CALL);
@@ -346,8 +311,8 @@ describe('storage — check', () => {
 
   it('different storageKeys produce different paramData', async () => {
     const [a, b] = await Promise.all([
-      instance.check({ constraints: [{ gte: 0n }], storageKey: 1n }),
-      instance.check({ constraints: [{ gte: 0n }], storageKey: 2n }),
+      instance.check({ constraint: { gte: 0n }, storageKey: 1n }),
+      instance.check({ constraint: { gte: 0n }, storageKey: 2n }),
     ]);
     const staticA = a.inputParams.find((p) => p.fetcherType === InputParamFetcherType.STATIC_CALL);
     const staticB = b.inputParams.find((p) => p.fetcherType === InputParamFetcherType.STATIC_CALL);
@@ -356,8 +321,8 @@ describe('storage — check', () => {
 
   it('is deterministic for the same explicit storageKey and constraints', async () => {
     const [a, b] = await Promise.all([
-      instance.check({ constraints: [{ eq: 42n }], storageKey: 3n }),
-      instance.check({ constraints: [{ eq: 42n }], storageKey: 3n }),
+      instance.check({ constraint: { eq: 42n }, storageKey: 3n }),
+      instance.check({ constraint: { eq: 42n }, storageKey: 3n }),
     ]);
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });

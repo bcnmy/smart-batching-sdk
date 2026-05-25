@@ -1,4 +1,4 @@
-# composable-sdk
+# smart-batching
 
 **Type-safe SDK for building composable ERC-8211 transactions on EVM smart accounts.**
 
@@ -6,7 +6,7 @@ With composable transactions, you describe what should happen — not just what 
 
 - **Call dependencies** — wire the output of one on-chain call directly into the input of the next, resolved at execution time. No need to know the value when building the transaction.
 - **Pre- and post-conditions** — assert the state of the chain before and after your writes. If any condition fails, the entire transaction reverts atomically and no partial state is committed.
-- **On-chain constraints** — attach bounds (`eq`, `gte`, `lte`) to any runtime value. The composability module enforces them during execution, acting as slippage guards, balance floors, or exact-match assertions.
+- **On-chain constraints** — attach bounds (`eq`, `gte`, `lte`, `gteSigned`, `lteSigned`) to any runtime value, or combine alternatives with `or`. The composability module enforces them during execution, acting as slippage guards, balance floors, or exact-match assertions.
 
 ---
 
@@ -57,7 +57,7 @@ A composable batch is a sequence of `ComposableCall` objects. Each call can cont
 - **Static args** — regular values fixed at signing time
 - **Runtime values** — placeholders resolved on-chain at execution time from a live balance, allowance, or storage slot
 - **Output captures** — instructions to store the return value of a call into a namespace storage slot, making it available as a runtime value for subsequent calls
-- **Constraints** — on-chain assertions (`eq`, `gte`, `lte`) that revert the entire UserOp if a condition fails
+- **Constraints** — on-chain assertions (`eq`, `gte`, `lte`, `gteSigned`, `lteSigned`, `or`) that revert the entire UserOp if a condition fails
 
 The module resolves the dependency graph and executes each call in order.
 
@@ -84,7 +84,7 @@ batch.add([
   usdc.check({
     functionName: 'balanceOf',
     args: [scaAddress],
-    constraints: [{ gte: amount }],
+    constraint: { gte: amount },
   }),
 
   // Action: transfer 50 USDC to the recipient
@@ -97,7 +97,7 @@ batch.add([
   usdc.check({
     functionName: 'balanceOf',
     args: [recipient],
-    constraints: [{ gte: amount }],
+    constraint: { gte: amount },
   }),
 ]);
 ```
@@ -212,30 +212,27 @@ batch.add([
 
 Constraints are bounds attached to a runtime value or a `check` call. The composability module evaluates them on-chain before using the value — if any constraint fails, the transaction reverts immediately.
 
-Three constraint operators are available:
+The following constraint operators are available:
 
-| Operator | Description |
-|---|---|
-| `{ eq: value }` | The resolved value must equal `value` exactly |
-| `{ gte: value }` | The resolved value must be greater than or equal to `value` |
-| `{ lte: value }` | The resolved value must be less than or equal to `value` |
+| Operator | Comparison | Description |
+|---|---|---|
+| `{ eq: value }` | unsigned | The resolved value must equal `value` exactly |
+| `{ gte: value }` | unsigned | The resolved value must be ≥ `value` |
+| `{ lte: value }` | unsigned | The resolved value must be ≤ `value` |
+| `{ gteSigned: value }` | signed (`int256`) | The resolved value (as `int256`) must be ≥ `value` |
+| `{ lteSigned: value }` | signed (`int256`) | The resolved value (as `int256`) must be ≤ `value` |
+| `{ or: [...] }` | — | Passes if **any one** of the listed child constraints passes |
 
-Constraints can be combined. All must pass for execution to continue.
+Each `check` or `runtimeValue` call accepts one `constraint`. To require multiple conditions simultaneously, use multiple separate calls. Children inside `or` must be standard or signed constraints — nested `or` is not supported.
 
 #### Constraints on a check call
 
 `check` reads a view function and asserts its return value. If the assertion fails, the entire batch reverts before any writes happen.
 
 ```ts
-// Assert USDC balance is between 10 and 1000 USDC (range check)
-usdc.check({
-  functionName: 'balanceOf',
-  args: [scaAddress],
-  constraints: [
-    { gte: parseUnits('10', 6) },
-    { lte: parseUnits('1000', 6) },
-  ],
-})
+// Assert USDC balance is between 10 and 1000 USDC (range check — two separate calls)
+usdc.check({ functionName: 'balanceOf', args: [scaAddress], constraint: { gte: parseUnits('10', 6) } })
+usdc.check({ functionName: 'balanceOf', args: [scaAddress], constraint: { lte: parseUnits('1000', 6) } })
 ```
 
 ```ts
@@ -243,7 +240,22 @@ usdc.check({
 usdc.check({
   functionName: 'balanceOf',
   args: [poolAddress],
-  constraints: [{ eq: 0n }],
+  constraint: { eq: 0n },
+})
+```
+
+```ts
+// Signed constraint — useful when a value may be negative (e.g. a signed price delta)
+oracle.check({ functionName: 'priceDelta', args: [], constraint: { gteSigned: -500n } })
+oracle.check({ functionName: 'priceDelta', args: [], constraint: { lteSigned: 500n } })
+```
+
+```ts
+// OR check — balance must be exactly 0 OR at least 10 USDC
+usdc.check({
+  functionName: 'balanceOf',
+  args: [scaAddress],
+  constraint: { or: [{ eq: 0n }, { gte: parseUnits('10', 6) }] },
 })
 ```
 
@@ -266,7 +278,7 @@ batch.add([
     args: [
       USDC,
       // Inject live USDC balance — but only if it is at least minExpected
-      usdc.runtimeBalance({ constraints: [{ gte: minExpected }] }),
+      usdc.runtimeBalance({ constraint: { gte: minExpected } }),
     ],
     value: parseEther('0.01'),
   }),
@@ -281,10 +293,10 @@ This pattern is a slippage guard: the batch only proceeds if the post-swap balan
 
 ```bash
 # npm
-npm install composable-sdk viem
+npm install smart-batching viem
 
 # bun
-bun add composable-sdk viem
+bun add smart-batching viem
 ```
 
 ---
@@ -298,7 +310,7 @@ Everything starts with `createComposableBatch`. It is the central builder that a
 ```ts
 import { createPublicClient, http } from 'viem';
 import { baseSepolia } from 'viem/chains';
-import { createComposableBatch } from 'composable-sdk';
+import { createComposableBatch } from 'smart-batching';
 
 const publicClient = createPublicClient({
   chain: baseSepolia,
@@ -357,7 +369,7 @@ batch.add([
   usdc.check({
     functionName: 'balanceOf',
     args: [scaAddress],
-    constraints: [{ gte: amount }],
+    constraint: { gte: amount },
   }),
   usdc.write({ functionName: 'transfer', args: ['0xRecipientAddress', amount] }),
 ]);
@@ -409,7 +421,7 @@ const userOpHash = await kernelClient.sendUserOperation({
 ```ts
 import { createPublicClient, http, parseUnits } from 'viem';
 import { baseSepolia } from 'viem/chains';
-import { createComposableBatch } from 'composable-sdk';
+import { createComposableBatch } from 'smart-batching';
 
 const publicClient = createPublicClient({
   chain: baseSepolia,
@@ -429,7 +441,7 @@ batch.add([
   usdc.check({
     functionName: 'balanceOf',
     args: [scaAddress],
-    constraints: [{ gte: amount }],
+    constraint: { gte: amount },
   }),
 
   // 2. Transfer exactly 10 USDC to the recipient
@@ -442,7 +454,7 @@ batch.add([
   usdc.check({
     functionName: 'balanceOf',
     args: [recipient],
-    constraints: [{ gte: amount }],
+    constraint: { gte: amount },
   }),
 ]);
 
@@ -462,8 +474,8 @@ Two patterns exist:
 
 | Pattern | How the value gets into storage | How it is read back |
 |---|---|---|
-| **Capture** | The composability module writes the return value of a call automatically | `storage.runtimeValue()` injects it; `storage.check()` asserts it; `storage.read()` reads it off-chain |
-| **Explicit write** | `storage.write()` — you supply the value at signing time | Same — `storage.runtimeValue()`, `storage.check()`, `storage.read()` |
+| **Capture** | The composability module writes the return value of a call automatically | `storage.runtimeValue()` injects it; `storage.check()` asserts it |
+| **Explicit write** | `storage.write()` — you supply the value at signing time | Same — `storage.runtimeValue()`, `storage.check()` |
 
 ---
 
@@ -481,7 +493,7 @@ Two capture strategies are available:
 ```ts
 import { createPublicClient, http, parseUnits } from 'viem';
 import { baseSepolia } from 'viem/chains';
-import { createComposableBatch } from 'composable-sdk';
+import { createComposableBatch } from 'smart-batching';
 
 const USDC = '0xUsdcAddress';
 
@@ -503,7 +515,7 @@ batch.add([
   // 2. Assert the captured value on-chain
   await storage.check({
     storageKey,
-    constraints: [{ eq: 10n }],
+    constraint: { eq: 10n },
   }),
 
   // 3. Transfer the captured amount to the recipient
@@ -528,15 +540,10 @@ batch.add([
     capture: { type: 'execResult', storageKey },
   }),
 
-  await storage.check({ storageKey, slotIndex: 0, constraints: [{ eq: 10n }] }),
-  await storage.check({ storageKey, slotIndex: 1, constraints: [{ eq: 21n }] }),
-  await storage.check({ storageKey, slotIndex: 2, constraints: [{ eq: 1n }] }),
+  await storage.check({ storageKey, slotIndex: 0, constraint: { eq: 10n } }),
+  await storage.check({ storageKey, slotIndex: 1, constraint: { eq: 21n } }),
+  await storage.check({ storageKey, slotIndex: 2, constraint: { eq: 1n } }),
 ]);
-
-// Off-chain reads after settlement
-const sum     = await storage.read({ storageKey, slotIndex: 0 });
-const product = await storage.read({ storageKey, slotIndex: 1 });
-const greater = await storage.read({ storageKey, slotIndex: 2 });
 ```
 
 #### staticCall capture
@@ -566,13 +573,9 @@ batch.add([
   // Assert the captured static call result on-chain
   await storage.check({
     storageKey,
-    constraints: [{ eq: 12n }],
+    constraint: { eq: 12n },
   }),
 ]);
-
-// Off-chain read after settlement
-const captured = await storage.read({ storageKey });
-// captured === toBytes32(12n)
 ```
 
 > **Constraint**: all captured return types must be static ABI types. Dynamic types (`bytes`, `string`, `T[]`) are not supported in captures.
@@ -586,7 +589,7 @@ Use this pattern when you know the value at signing time but need it available a
 ```ts
 import { createPublicClient, http, parseUnits } from 'viem';
 import { baseSepolia } from 'viem/chains';
-import { createComposableBatch } from 'composable-sdk';
+import { createComposableBatch } from 'smart-batching';
 
 const USDC = '0xUsdcAddress';
 
@@ -605,7 +608,7 @@ batch.add([
   // 2. On-chain assertion: the slot must equal the value we just wrote
   await storage.check({
     storageKey,
-    constraints: [{ eq: amount }],
+    constraint: { eq: amount },
   }),
 
   // 3. Transfer — the amount is resolved from storage at execution time
@@ -614,13 +617,6 @@ batch.add([
     args: ['0xRecipientAddress', await storage.runtimeValue({ storageKey })],
   }),
 ]);
-```
-
-**Off-chain verification** — after the transaction settles, read the slot directly to confirm what was stored:
-
-```ts
-const stored = await storage.read({ storageKey });
-// stored === toBytes32(amount)
 ```
 
 `storage.getStorageKey()` returns a unique `bigint` key each time it is called, so multiple storage slots within the same batch never collide.
@@ -636,4 +632,4 @@ Detailed SDK reference for each module — all parameters, return types, and foc
 | [Batch](./docs/batch.md) | `createComposableBatch` — the entry point. Building, assembling, and serialising a composable batch. |
 | [Token](./docs/token.md) | `ERC20TokenInstance` and `NativeTokenInstance` — reads, writes, runtime balances, and allowances. |
 | [Contract](./docs/contract.md) | `ContractInstance` — generic contract reads, composable writes, runtime values, captures, and checks. |
-| [Storage](./docs/storage.md) | `StorageInstance` — namespace storage reads, writes, runtime values, checks, and slot indexing. |
+| [Storage](./docs/storage.md) | `StorageInstance` — namespace storage writes, runtime values, checks, and slot indexing. |
