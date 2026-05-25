@@ -311,7 +311,7 @@ describe('contract — check (ERC20 on Base Sepolia)', () => {
     const call = token.check({
       functionName: 'balanceOf',
       args: [WETH],
-      constraints: [{ gte: 0n }],
+      constraint: { gte: 0n },
     });
     expect(typeof call.functionSig).toBe('string');
     expect(call.functionSig.length).toBeGreaterThan(0);
@@ -321,20 +321,20 @@ describe('contract — check (ERC20 on Base Sepolia)', () => {
     const call = token.check({
       functionName: 'balanceOf',
       args: [WETH],
-      constraints: [{ gte: 0n }],
+      constraint: { gte: 0n },
     });
     // check() is a predicate — the calldata never executes, so functionSig is always the sentinel
     expect(call.functionSig).toBe('0x11111111');
   });
 
   it('check(totalSupply) uses the predicate dummy functionSig', () => {
-    const call = token.check({ functionName: 'totalSupply', args: [], constraints: [{ gte: 1n }] });
+    const call = token.check({ functionName: 'totalSupply', args: [], constraint: { gte: 1n } });
     expect(call.functionSig).toBe('0x11111111');
   });
 
   it('check() always produces the same predicate functionSig regardless of function called', () => {
-    const a = token.check({ functionName: 'balanceOf', args: [WETH], constraints: [{ gte: 0n }] });
-    const b = token.check({ functionName: 'totalSupply', args: [], constraints: [{ gte: 0n }] });
+    const a = token.check({ functionName: 'balanceOf', args: [WETH], constraint: { gte: 0n } });
+    const b = token.check({ functionName: 'totalSupply', args: [], constraint: { gte: 0n } });
     expect(a.functionSig).toBe(b.functionSig);
   });
 
@@ -342,7 +342,7 @@ describe('contract — check (ERC20 on Base Sepolia)', () => {
     const call = token.check({
       functionName: 'balanceOf',
       args: [WETH],
-      constraints: [{ gte: 0n }],
+      constraint: { gte: 0n },
     });
     expect(call.outputParams).toHaveLength(0);
   });
@@ -351,7 +351,7 @@ describe('contract — check (ERC20 on Base Sepolia)', () => {
     const call = token.check({
       functionName: 'balanceOf',
       args: [WETH],
-      constraints: [{ gte: 0n }],
+      constraint: { gte: 0n },
     });
     const staticCallParam = call.inputParams.find(
       (p) => p.fetcherType === InputParamFetcherType.STATIC_CALL,
@@ -363,7 +363,7 @@ describe('contract — check (ERC20 on Base Sepolia)', () => {
     const call = token.check({
       functionName: 'balanceOf',
       args: [WETH],
-      constraints: [{ gte: 1_000n }],
+      constraint: { gte: 1_000n },
     });
     const staticCallParam = call.inputParams.find(
       (p) => p.fetcherType === InputParamFetcherType.STATIC_CALL,
@@ -371,28 +371,16 @@ describe('contract — check (ERC20 on Base Sepolia)', () => {
     expect(staticCallParam?.constraints).toHaveLength(1);
   });
 
-  it('multiple constraints are all applied to the STATIC_CALL param', () => {
-    const call = token.check({
-      functionName: 'balanceOf',
-      args: [WETH],
-      constraints: [{ gte: 1_000n }, { lte: 1_000_000n }],
-    });
-    const staticCallParam = call.inputParams.find(
-      (p) => p.fetcherType === InputParamFetcherType.STATIC_CALL,
-    );
-    expect(staticCallParam?.constraints).toHaveLength(2);
-  });
-
-  it('constraints do not affect paramData of the STATIC_CALL param', () => {
+  it('constraint does not affect paramData of the STATIC_CALL param', () => {
     const withConstraint = token.check({
       functionName: 'balanceOf',
       args: [WETH],
-      constraints: [{ gte: 999n }],
+      constraint: { gte: 999n },
     });
     const withOtherConstraint = token.check({
       functionName: 'balanceOf',
       args: [WETH],
-      constraints: [{ lte: 1n }],
+      constraint: { lte: 1n },
     });
     const staticA = withConstraint.inputParams.find(
       (p) => p.fetcherType === InputParamFetcherType.STATIC_CALL,
@@ -404,16 +392,16 @@ describe('contract — check (ERC20 on Base Sepolia)', () => {
   });
 
   it('check(balanceOf) produces different paramData for different addresses', () => {
-    const a = token.check({ functionName: 'balanceOf', args: [USDC], constraints: [{ gte: 0n }] });
-    const b = token.check({ functionName: 'balanceOf', args: [WETH], constraints: [{ gte: 0n }] });
+    const a = token.check({ functionName: 'balanceOf', args: [USDC], constraint: { gte: 0n } });
+    const b = token.check({ functionName: 'balanceOf', args: [WETH], constraint: { gte: 0n } });
     const staticA = a.inputParams.find((p) => p.fetcherType === InputParamFetcherType.STATIC_CALL);
     const staticB = b.inputParams.find((p) => p.fetcherType === InputParamFetcherType.STATIC_CALL);
     expect(staticA?.paramData).not.toBe(staticB?.paramData);
   });
 
   it('check(balanceOf) is deterministic for the same args', () => {
-    const a = token.check({ functionName: 'balanceOf', args: [WETH], constraints: [{ gte: 0n }] });
-    const b = token.check({ functionName: 'balanceOf', args: [WETH], constraints: [{ gte: 0n }] });
+    const a = token.check({ functionName: 'balanceOf', args: [WETH], constraint: { gte: 0n } });
+    const b = token.check({ functionName: 'balanceOf', args: [WETH], constraint: { gte: 0n } });
     expect(a.functionSig).toBe(b.functionSig);
     expect(JSON.stringify(a.inputParams)).toBe(JSON.stringify(b.inputParams));
   });
@@ -468,7 +456,7 @@ describe('contract — runtimeValue (Uniswap V3 Factory)', () => {
     expect(rv.outputParams).toHaveLength(0);
   });
 
-  it('no constraints defaults to empty constraints array', () => {
+  it('no constraint defaults to empty constraint array', () => {
     const rv = factory.runtimeValue({ functionName: 'owner', args: [] });
     expect(rv.inputParams[0].constraints).toHaveLength(0);
   });
@@ -477,7 +465,7 @@ describe('contract — runtimeValue (Uniswap V3 Factory)', () => {
     const rv = factory.runtimeValue({
       functionName: 'feeAmountTickSpacing',
       args: [3000],
-      constraints: [{ gte: 10n }],
+      constraint: { gte: 10n },
     });
     expect(rv.inputParams[0].constraints).toHaveLength(1);
   });
@@ -486,7 +474,7 @@ describe('contract — runtimeValue (Uniswap V3 Factory)', () => {
     const rv = factory.runtimeValue({
       functionName: 'feeAmountTickSpacing',
       args: [3000],
-      constraints: [{ lte: 200n }],
+      constraint: { lte: 200n },
     });
     expect(rv.inputParams[0].constraints).toHaveLength(1);
   });
@@ -495,25 +483,16 @@ describe('contract — runtimeValue (Uniswap V3 Factory)', () => {
     const rv = factory.runtimeValue({
       functionName: 'feeAmountTickSpacing',
       args: [3000],
-      constraints: [{ eq: 60n }],
+      constraint: { eq: 60n },
     });
     expect(rv.inputParams[0].constraints).toHaveLength(1);
   });
 
-  it('multiple constraints are all added', () => {
-    const rv = factory.runtimeValue({
-      functionName: 'feeAmountTickSpacing',
-      args: [3000],
-      constraints: [{ gte: 10n }, { lte: 200n }],
-    });
-    expect(rv.inputParams[0].constraints).toHaveLength(2);
-  });
-
-  it('constraints do not affect the encoded paramData', () => {
+  it('constraint does not affect the encoded paramData', () => {
     const withConstraint = factory.runtimeValue({
       functionName: 'owner',
       args: [],
-      constraints: [{ gte: 1n }],
+      constraint: { gte: 1n },
     });
     const withoutConstraint = factory.runtimeValue({ functionName: 'owner', args: [] });
     expect(withConstraint.inputParams[0].paramData).toBe(

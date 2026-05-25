@@ -56,7 +56,7 @@ describe('Integration — signed integer and OR constraints on runtimeBalance (B
           scaAddress,
           usdc.runtimeBalance({
             owner: RUNTIME_TRANSFER_CONTRACT,
-            constraints: [{ lteSigned: 0n }],
+            constraint: { lteSigned: 0n },
           }),
         ],
       }),
@@ -90,7 +90,7 @@ describe('Integration — signed integer and OR constraints on runtimeBalance (B
           scaAddress,
           usdc.runtimeBalance({
             owner: RUNTIME_TRANSFER_CONTRACT,
-            constraints: [{ gteSigned: TRANSFER_AMOUNT + 1n }],
+            constraint: { gteSigned: TRANSFER_AMOUNT + 1n },
           }),
         ],
       }),
@@ -132,14 +132,12 @@ describe('Integration — signed integer and OR constraints on runtimeBalance (B
           scaAddress,
           usdc.runtimeBalance({
             owner: RUNTIME_TRANSFER_CONTRACT,
-            constraints: [
-              {
-                or: [
-                  { lteSigned: 0n }, // fails: TRANSFER_AMOUNT > 0
-                  { gteSigned: TRANSFER_AMOUNT }, // passes: TRANSFER_AMOUNT ≥ TRANSFER_AMOUNT
-                ],
-              },
-            ],
+            constraint: {
+              or: [
+                { lteSigned: 0n }, // fails: TRANSFER_AMOUNT > 0
+                { gteSigned: TRANSFER_AMOUNT }, // passes: TRANSFER_AMOUNT ≥ TRANSFER_AMOUNT
+              ],
+            },
           }),
         ],
       }),
@@ -188,14 +186,12 @@ describe('Integration — signed integer and OR constraints on runtimeBalance (B
           scaAddress,
           usdc.runtimeBalance({
             owner: RUNTIME_TRANSFER_CONTRACT,
-            constraints: [
-              {
-                or: [
-                  { lteSigned: 0n }, // fails: 1 USDC > 0
-                  { lte: ONE_USDC }, // passes: 1 USDC ≤ 1 USDC
-                ],
-              },
-            ],
+            constraint: {
+              or: [
+                { lteSigned: 0n }, // fails: 1 USDC > 0
+                { lte: ONE_USDC }, // passes: 1 USDC ≤ 1 USDC
+              ],
+            },
           }),
         ],
       }),
@@ -242,14 +238,12 @@ describe('Integration — signed integer and OR constraints on runtimeBalance (B
           scaAddress,
           usdc.runtimeBalance({
             owner: RUNTIME_TRANSFER_CONTRACT,
-            constraints: [
-              {
-                or: [
-                  { gteSigned: -1n }, // passes: any positive balance ≥ -1 as int256
-                  { lte: ONE_USDC }, // also passes
-                ],
-              },
-            ],
+            constraint: {
+              or: [
+                { gteSigned: -1n }, // passes: any positive balance ≥ -1 as int256
+                { lte: ONE_USDC }, // also passes
+              ],
+            },
           }),
         ],
       }),

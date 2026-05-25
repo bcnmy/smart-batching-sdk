@@ -188,7 +188,7 @@ describe.skip('Integration — ZeroDev Kernel + Biconomy composability module (B
       usdc.check({
         functionName: 'balanceOf',
         args: [scaAddress],
-        constraints: [{ gte: FUND_AMOUNT }],
+        constraint: { gte: FUND_AMOUNT },
       }),
       // Sweep: transfer the SCA's full runtime USDC balance to the EOA
       usdc.write({
@@ -199,7 +199,7 @@ describe.skip('Integration — ZeroDev Kernel + Biconomy composability module (B
       usdc.check({
         functionName: 'balanceOf',
         args: [scaAddress],
-        constraints: [{ eq: 0n }],
+        constraint: { eq: 0n },
       }),
     ]);
 

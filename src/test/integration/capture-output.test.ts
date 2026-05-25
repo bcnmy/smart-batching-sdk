@@ -37,9 +37,9 @@
  *   storage.runtimeValue(slot) piped as the transfer amount → USDC sent from SCA to EOA.
  *   Demonstrates the full composability chain: call → capture → use.
  *
- * Test 7 — staticCall capture with range constraints (gte + lte):
+ * Test 7 — staticCall capture with range constraint (gte + lte via two check calls):
  *   oneOutputStaticCall(6) → result = 18.
- *   storage.check asserts 10 ≤ 18 ≤ 20 on-chain (two constraints on the same slot).
+ *   Two storage.check calls assert 10 ≤ 18 ≤ 20 on-chain.
  *
  * Test 8 — mixed execResult + staticCall in the same batch:
  *   oneOutput(8) → execResult → execKey = 16.
@@ -129,7 +129,7 @@ describe('Integration — capture output params: execResult and staticCall (Base
         capture: { type: 'execResult', storageKey },
       }),
       // 2. On-chain constraint: slot must equal the captured return value
-      storage.check({ storageKey, constraints: [{ eq: expectedResult }] }),
+      storage.check({ storageKey, constraint: { eq: expectedResult } }),
     ]);
 
     expect(batch.length).toBe(2);
@@ -171,10 +171,10 @@ describe('Integration — capture output params: execResult and staticCall (Base
         args: [a, b],
         capture: { type: 'execResult', storageKey },
       }),
-      // 2. On-chain constraints: assert all three captured slots by index
-      storage.check({ storageKey, constraints: [{ eq: expectedSum }] }),
-      storage.check({ storageKey, slotIndex: 1, constraints: [{ eq: expectedProduct }] }),
-      storage.check({ storageKey, slotIndex: 2, constraints: [{ eq: expectedGreater }] }),
+      // 2. On-chain constraint: assert all three captured slots by index
+      storage.check({ storageKey, constraint: { eq: expectedSum } }),
+      storage.check({ storageKey, slotIndex: 1, constraint: { eq: expectedProduct } }),
+      storage.check({ storageKey, slotIndex: 2, constraint: { eq: expectedGreater } }),
     ]);
 
     expect(batch.length).toBe(4);
@@ -220,7 +220,7 @@ describe('Integration — capture output params: execResult and staticCall (Base
         },
       }),
       // 2. On-chain constraint: slot must equal the captured static call result
-      storage.check({ storageKey, constraints: [{ eq: expectedResult }] }),
+      storage.check({ storageKey, constraint: { eq: expectedResult } }),
     ]);
 
     expect(batch.length).toBe(2);
@@ -269,10 +269,10 @@ describe('Integration — capture output params: execResult and staticCall (Base
           storageKey,
         },
       }),
-      // 2. On-chain constraints: assert all three captured slots by index
-      storage.check({ storageKey, constraints: [{ eq: expectedTriple }] }),
-      storage.check({ storageKey, slotIndex: 1, constraints: [{ eq: expectedQuad }] }),
-      storage.check({ storageKey, slotIndex: 2, constraints: [{ eq: expectedQuint }] }),
+      // 2. On-chain constraint: assert all three captured slots by index
+      storage.check({ storageKey, constraint: { eq: expectedTriple } }),
+      storage.check({ storageKey, slotIndex: 1, constraint: { eq: expectedQuad } }),
+      storage.check({ storageKey, slotIndex: 2, constraint: { eq: expectedQuint } }),
     ]);
 
     expect(batch.length).toBe(4);
@@ -320,10 +320,10 @@ describe('Integration — capture output params: execResult and staticCall (Base
         capture: { type: 'execResult', storageKey: key2 },
       }),
       // On-chain: key1 single slot + all three key2 slots independently constrained
-      storage.check({ storageKey: key1, constraints: [{ eq: expectedSingle }] }),
-      storage.check({ storageKey: key2, constraints: [{ eq: expectedSum }] }),
-      storage.check({ storageKey: key2, slotIndex: 1, constraints: [{ eq: expectedProduct }] }),
-      storage.check({ storageKey: key2, slotIndex: 2, constraints: [{ eq: expectedGreater }] }),
+      storage.check({ storageKey: key1, constraint: { eq: expectedSingle } }),
+      storage.check({ storageKey: key2, constraint: { eq: expectedSum } }),
+      storage.check({ storageKey: key2, slotIndex: 1, constraint: { eq: expectedProduct } }),
+      storage.check({ storageKey: key2, slotIndex: 2, constraint: { eq: expectedGreater } }),
     ]);
 
     expect(batch.length).toBe(6);
@@ -365,7 +365,7 @@ describe('Integration — capture output params: execResult and staticCall (Base
         capture: { type: 'execResult', storageKey },
       }),
       // 2. On-chain: assert the slot holds the expected captured value
-      storage.check({ storageKey, constraints: [{ eq: EXPECTED_CAPTURE }] }),
+      storage.check({ storageKey, constraint: { eq: EXPECTED_CAPTURE } }),
       // 3. Transfer the runtime-resolved slot value (EXPECTED_CAPTURE) from SCA to EOA
       usdc.write({
         functionName: 'transfer',
@@ -387,7 +387,7 @@ describe('Integration — capture output params: execResult and staticCall (Base
 
   // ── Advanced: range constraints (gte + lte) ────────────────────────────────
 
-  it('staticCall capture with range constraints: oneOutputStaticCall(6) → 18 asserted within [10, 20]', async () => {
+  it('staticCall capture with range constraint: oneOutputStaticCall(6) → 18 asserted within [10, 20]', async () => {
     const batch = createComposableBatch(publicClient, scaAddress);
     const storage = batch.storage();
     const storageWriteExample = batch.contract(
@@ -415,8 +415,8 @@ describe('Integration — capture output params: execResult and staticCall (Base
         },
       }),
 
-      storage.check({ storageKey, constraints: [{ gte: 10n }] }),
-      storage.check({ storageKey, constraints: [{ lte: 20n }] }),
+      storage.check({ storageKey, constraint: { gte: 10n } }),
+      storage.check({ storageKey, constraint: { lte: 20n } }),
     ]);
 
     expect(batch.length).toBe(3);
@@ -473,8 +473,8 @@ describe('Integration — capture output params: execResult and staticCall (Base
         },
       }),
       // On-chain: both slots independently verified
-      storage.check({ storageKey: execKey, constraints: [{ eq: expectedExecResult }] }),
-      storage.check({ storageKey: staticKey, constraints: [{ eq: expectedStaticResult }] }),
+      storage.check({ storageKey: execKey, constraint: { eq: expectedExecResult } }),
+      storage.check({ storageKey: staticKey, constraint: { eq: expectedStaticResult } }),
     ]);
 
     expect(batch.length).toBe(4);
@@ -509,7 +509,7 @@ describe('Integration — capture output params: execResult and staticCall (Base
         capture: { type: 'execResult', storageKey },
       }),
       // Wrong expectation: slot holds 10 but we assert 999 → on-chain revert
-      storage.check({ storageKey, constraints: [{ eq: 999n }] }),
+      storage.check({ storageKey, constraint: { eq: 999n } }),
     ]);
 
     await expect(

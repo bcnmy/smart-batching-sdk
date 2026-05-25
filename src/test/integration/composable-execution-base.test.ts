@@ -56,7 +56,7 @@ describe('Integration — composable execution via runtime transfer contract (Ba
       usdc.check({
         functionName: 'balanceOf',
         args: [RUNTIME_TRANSFER_CONTRACT],
-        constraints: [{ gte: TRANSFER_AMOUNT }],
+        constraint: { gte: TRANSFER_AMOUNT },
       }),
       // Transfer: move the runtime transfer contract's full balance to the SCA
       runtimeTransfer.write({
@@ -72,7 +72,7 @@ describe('Integration — composable execution via runtime transfer contract (Ba
       usdc.check({
         functionName: 'balanceOf',
         args: [RUNTIME_TRANSFER_CONTRACT],
-        constraints: [{ eq: 0n }],
+        constraint: { eq: 0n },
       }),
     ]);
 
@@ -110,7 +110,7 @@ describe('Integration — composable execution via runtime transfer contract (Ba
       usdc.check({
         functionName: 'balanceOf',
         args: [RUNTIME_TRANSFER_CONTRACT],
-        constraints: [{ gte: TRANSFER_AMOUNT }],
+        constraint: { gte: TRANSFER_AMOUNT },
       }),
       runtimeTransfer.write({
         functionName: 'transferFundsWithStruct',
@@ -126,7 +126,7 @@ describe('Integration — composable execution via runtime transfer contract (Ba
       usdc.check({
         functionName: 'balanceOf',
         args: [RUNTIME_TRANSFER_CONTRACT],
-        constraints: [{ eq: 0n }],
+        constraint: { eq: 0n },
       }),
     ]);
 
@@ -162,7 +162,7 @@ describe('Integration — composable execution via runtime transfer contract (Ba
       usdc.check({
         functionName: 'balanceOf',
         args: [RUNTIME_TRANSFER_CONTRACT],
-        constraints: [{ gte: TRANSFER_AMOUNT }],
+        constraint: { gte: TRANSFER_AMOUNT },
       }),
       runtimeTransfer.write({
         functionName: 'transferFundsWithDynamicArray',
@@ -176,7 +176,7 @@ describe('Integration — composable execution via runtime transfer contract (Ba
       usdc.check({
         functionName: 'balanceOf',
         args: [RUNTIME_TRANSFER_CONTRACT],
-        constraints: [{ eq: 0n }],
+        constraint: { eq: 0n },
       }),
     ]);
 
@@ -212,7 +212,7 @@ describe('Integration — composable execution via runtime transfer contract (Ba
       usdc.check({
         functionName: 'balanceOf',
         args: [RUNTIME_TRANSFER_CONTRACT],
-        constraints: [{ gte: TRANSFER_AMOUNT }],
+        constraint: { gte: TRANSFER_AMOUNT },
       }),
       runtimeTransfer.write({
         functionName: 'transferFundsWithString',
@@ -226,7 +226,7 @@ describe('Integration — composable execution via runtime transfer contract (Ba
       usdc.check({
         functionName: 'balanceOf',
         args: [RUNTIME_TRANSFER_CONTRACT],
-        constraints: [{ eq: 0n }],
+        constraint: { eq: 0n },
       }),
     ]);
 
@@ -262,7 +262,7 @@ describe('Integration — composable execution via runtime transfer contract (Ba
       usdc.check({
         functionName: 'balanceOf',
         args: [RUNTIME_TRANSFER_CONTRACT],
-        constraints: [{ gte: TRANSFER_AMOUNT }],
+        constraint: { gte: TRANSFER_AMOUNT },
       }),
       runtimeTransfer.write({
         functionName: 'transferFundsWithBytes',
@@ -276,7 +276,7 @@ describe('Integration — composable execution via runtime transfer contract (Ba
       usdc.check({
         functionName: 'balanceOf',
         args: [RUNTIME_TRANSFER_CONTRACT],
-        constraints: [{ eq: 0n }],
+        constraint: { eq: 0n },
       }),
     ]);
 
@@ -312,7 +312,7 @@ describe('Integration — composable execution via runtime transfer contract (Ba
       usdc.check({
         functionName: 'balanceOf',
         args: [RUNTIME_TRANSFER_CONTRACT],
-        constraints: [{ gte: TRANSFER_AMOUNT }],
+        constraint: { gte: TRANSFER_AMOUNT },
       }),
       runtimeTransfer.write({
         functionName: 'transferFundsWithRuntimeParamInsideArray',
@@ -325,7 +325,7 @@ describe('Integration — composable execution via runtime transfer contract (Ba
       usdc.check({
         functionName: 'balanceOf',
         args: [RUNTIME_TRANSFER_CONTRACT],
-        constraints: [{ eq: 0n }],
+        constraint: { eq: 0n },
       }),
     ]);
 

@@ -32,7 +32,7 @@ describe('Integration — Biconomy abstractjs composable execution', () => {
       usdc.check({
         functionName: 'balanceOf',
         args: [scaAddress],
-        constraints: [{ gte: FUND_AMOUNT }],
+        constraint: { gte: FUND_AMOUNT },
       }),
       // Sweep: transfer the SCA's full runtime balance to the EOA
       usdc.write({
@@ -40,7 +40,7 @@ describe('Integration — Biconomy abstractjs composable execution', () => {
         args: [_account.address, usdc.runtimeBalance()],
       }),
       // Post-condition: assert SCA balance is zero (or near zero) after sweep
-      usdc.check({ functionName: 'balanceOf', args: [scaAddress], constraints: [{ gte: 0n }] }),
+      usdc.check({ functionName: 'balanceOf', args: [scaAddress], constraint: { gte: 0n } }),
     ]);
 
     expect(batch.length).toBe(3);
@@ -79,7 +79,7 @@ describe('Integration — Biconomy abstractjs composable execution', () => {
       usdc.check({
         functionName: 'balanceOf',
         args: [scaAddress],
-        constraints: [{ gte: 2n * FUND_AMOUNT }],
+        constraint: { gte: 2n * FUND_AMOUNT },
       }),
       // Sweep: would transfer runtime balance to EOA (never reached due to revert)
       usdc.write({
@@ -123,7 +123,7 @@ describe('Integration — Biconomy abstractjs composable execution', () => {
       usdc.check({
         functionName: 'balanceOf',
         args: [scaAddress],
-        constraints: [{ gte: FUND_AMOUNT }],
+        constraint: { gte: FUND_AMOUNT },
       }),
     ]);
 
@@ -164,7 +164,7 @@ describe('Integration — Biconomy abstractjs composable execution', () => {
       // Step A: write FUND_AMOUNT/2 into the shared namespace storage slot
       storage.write({ value: storageValue, storageKey }),
       // Step B: assert the stored value equals what was just written before proceeding
-      storage.check({ storageKey, constraints: [{ eq: storageValue }] }),
+      storage.check({ storageKey, constraint: { eq: storageValue } }),
       // Step C: transfer the runtime-resolved storage value (FUND_AMOUNT/2) from SCA to EOA
       usdc.write({
         functionName: 'transfer',

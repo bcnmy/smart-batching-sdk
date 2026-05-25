@@ -45,52 +45,41 @@ const NEG_42_INT256 = encodeAbiParameters(
 
 describe('toConstraintFields', () => {
   it('maps { gte } to a GTE ConstraintField', () => {
-    const [field] = toConstraintFields([{ gte: 100n }]);
+    const [field] = toConstraintFields({ gte: 100n });
     expect(field.type).toBe(ConstraintType.GTE);
     expect(field.value).toBe(100n);
   });
 
   it('maps { lte } to a LTE ConstraintField', () => {
-    const [field] = toConstraintFields([{ lte: 500n }]);
+    const [field] = toConstraintFields({ lte: 500n });
     expect(field.type).toBe(ConstraintType.LTE);
     expect(field.value).toBe(500n);
   });
 
   it('maps { eq } to an EQ ConstraintField', () => {
-    const [field] = toConstraintFields([{ eq: 0n }]);
+    const [field] = toConstraintFields({ eq: 0n });
     expect(field.type).toBe(ConstraintType.EQ);
     expect(field.value).toBe(0n);
   });
 
   it('maps { gteSigned } to a GTE_SIGNED ConstraintField', () => {
-    const [field] = toConstraintFields([{ gteSigned: -1n }]);
+    const [field] = toConstraintFields({ gteSigned: -1n });
     expect(field.type).toBe(ConstraintType.GTE_SIGNED);
     expect(field.value).toBe(-1n);
   });
 
   it('maps { lteSigned } to a LTE_SIGNED ConstraintField', () => {
-    const [field] = toConstraintFields([{ lteSigned: -100n }]);
+    const [field] = toConstraintFields({ lteSigned: -100n });
     expect(field.type).toBe(ConstraintType.LTE_SIGNED);
     expect(field.value).toBe(-100n);
   });
 
-  it('preserves order when mixing all five constraint types', () => {
-    const fields = toConstraintFields([
-      { gte: 10n },
-      { lte: 90n },
-      { eq: 50n },
-      { gteSigned: -5n },
-      { lteSigned: 5n },
-    ]);
-    expect(fields[0].type).toBe(ConstraintType.GTE);
-    expect(fields[1].type).toBe(ConstraintType.LTE);
-    expect(fields[2].type).toBe(ConstraintType.EQ);
-    expect(fields[3].type).toBe(ConstraintType.GTE_SIGNED);
-    expect(fields[4].type).toBe(ConstraintType.LTE_SIGNED);
+  it('returns an empty array when given no constraint', () => {
+    expect(toConstraintFields(undefined)).toHaveLength(0);
   });
 
-  it('returns an empty array when given no constraints', () => {
-    expect(toConstraintFields([])).toHaveLength(0);
+  it('wraps a single constraint in an array of length 1', () => {
+    expect(toConstraintFields({ gte: 1n })).toHaveLength(1);
   });
 });
 
@@ -429,12 +418,12 @@ describe('orConstraint helper', () => {
 
 describe('toConstraintFields — OR', () => {
   it('maps { or: [...] } to an OR ConstraintField', () => {
-    const [field] = toConstraintFields([{ or: [{ eq: 0n }, { gte: 100n }] }]);
+    const [field] = toConstraintFields({ or: [{ eq: 0n }, { gte: 100n }] });
     expect(field.type).toBe(ConstraintType.OR);
   });
 
   it('sub-constraints inside OR are converted to ConstraintFields stored in value', () => {
-    const [field] = toConstraintFields([{ or: [{ eq: 0n }, { gte: 100n }] }]);
+    const [field] = toConstraintFields({ or: [{ eq: 0n }, { gte: 100n }] });
     const subs = field.value as ReturnType<typeof equalTo>[];
     expect(subs).toHaveLength(2);
     expect(subs[0].type).toBe(ConstraintType.EQ);
@@ -442,21 +431,10 @@ describe('toConstraintFields — OR', () => {
   });
 
   it('OR sub-constraints can include signed variants (gteSigned, lteSigned)', () => {
-    const [field] = toConstraintFields([{ or: [{ gteSigned: -1n }, { lteSigned: 0n }] }]);
+    const [field] = toConstraintFields({ or: [{ gteSigned: -1n }, { lteSigned: 0n }] });
     const subs = field.value as ReturnType<typeof greaterThanOrEqualToSigned>[];
     expect(subs[0].type).toBe(ConstraintType.GTE_SIGNED);
     expect(subs[1].type).toBe(ConstraintType.LTE_SIGNED);
-  });
-
-  it('OR can appear alongside other constraints in the same array — order is preserved', () => {
-    const fields = toConstraintFields([
-      { gte: 10n },
-      { or: [{ eq: 0n }, { gte: 100n }] },
-      { lte: 500n },
-    ]);
-    expect(fields[0].type).toBe(ConstraintType.GTE);
-    expect(fields[1].type).toBe(ConstraintType.OR);
-    expect(fields[2].type).toBe(ConstraintType.LTE);
   });
 });
 
