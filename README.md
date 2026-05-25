@@ -84,7 +84,7 @@ batch.add([
   usdc.check({
     functionName: 'balanceOf',
     args: [scaAddress],
-    constraints: [{ gte: amount }],
+    constraint: { gte: amount },
   }),
 
   // Action: transfer 50 USDC to the recipient
@@ -97,7 +97,7 @@ batch.add([
   usdc.check({
     functionName: 'balanceOf',
     args: [recipient],
-    constraints: [{ gte: amount }],
+    constraint: { gte: amount },
   }),
 ]);
 ```
@@ -223,22 +223,16 @@ The following constraint operators are available:
 | `{ lteSigned: value }` | signed (`int256`) | The resolved value (as `int256`) must be ≤ `value` |
 | `{ or: [...] }` | — | Passes if **any one** of the listed child constraints passes |
 
-Constraints can be combined. All top-level constraints must pass. Children inside `or` must be standard or signed constraints — nested `or` is not supported.
+Each `check` or `runtimeValue` call accepts one `constraint`. To require multiple conditions simultaneously, use multiple separate calls. Children inside `or` must be standard or signed constraints — nested `or` is not supported.
 
 #### Constraints on a check call
 
 `check` reads a view function and asserts its return value. If the assertion fails, the entire batch reverts before any writes happen.
 
 ```ts
-// Assert USDC balance is between 10 and 1000 USDC (range check)
-usdc.check({
-  functionName: 'balanceOf',
-  args: [scaAddress],
-  constraints: [
-    { gte: parseUnits('10', 6) },
-    { lte: parseUnits('1000', 6) },
-  ],
-})
+// Assert USDC balance is between 10 and 1000 USDC (range check — two separate calls)
+usdc.check({ functionName: 'balanceOf', args: [scaAddress], constraint: { gte: parseUnits('10', 6) } })
+usdc.check({ functionName: 'balanceOf', args: [scaAddress], constraint: { lte: parseUnits('1000', 6) } })
 ```
 
 ```ts
@@ -246,20 +240,14 @@ usdc.check({
 usdc.check({
   functionName: 'balanceOf',
   args: [poolAddress],
-  constraints: [{ eq: 0n }],
+  constraint: { eq: 0n },
 })
 ```
 
 ```ts
-// Signed range check — useful when a value may be negative (e.g. a signed price delta)
-oracle.check({
-  functionName: 'priceDelta',
-  args: [],
-  constraints: [
-    { gteSigned: -500n },  // delta must be >= -500 (int256 comparison)
-    { lteSigned: 500n },   // delta must be <= +500
-  ],
-})
+// Signed constraint — useful when a value may be negative (e.g. a signed price delta)
+oracle.check({ functionName: 'priceDelta', args: [], constraint: { gteSigned: -500n } })
+oracle.check({ functionName: 'priceDelta', args: [], constraint: { lteSigned: 500n } })
 ```
 
 ```ts
@@ -267,7 +255,7 @@ oracle.check({
 usdc.check({
   functionName: 'balanceOf',
   args: [scaAddress],
-  constraints: [{ or: [{ eq: 0n }, { gte: parseUnits('10', 6) }] }],
+  constraint: { or: [{ eq: 0n }, { gte: parseUnits('10', 6) }] },
 })
 ```
 
@@ -290,7 +278,7 @@ batch.add([
     args: [
       USDC,
       // Inject live USDC balance — but only if it is at least minExpected
-      usdc.runtimeBalance({ constraints: [{ gte: minExpected }] }),
+      usdc.runtimeBalance({ constraint: { gte: minExpected } }),
     ],
     value: parseEther('0.01'),
   }),
@@ -381,7 +369,7 @@ batch.add([
   usdc.check({
     functionName: 'balanceOf',
     args: [scaAddress],
-    constraints: [{ gte: amount }],
+    constraint: { gte: amount },
   }),
   usdc.write({ functionName: 'transfer', args: ['0xRecipientAddress', amount] }),
 ]);
@@ -453,7 +441,7 @@ batch.add([
   usdc.check({
     functionName: 'balanceOf',
     args: [scaAddress],
-    constraints: [{ gte: amount }],
+    constraint: { gte: amount },
   }),
 
   // 2. Transfer exactly 10 USDC to the recipient
@@ -466,7 +454,7 @@ batch.add([
   usdc.check({
     functionName: 'balanceOf',
     args: [recipient],
-    constraints: [{ gte: amount }],
+    constraint: { gte: amount },
   }),
 ]);
 
@@ -527,7 +515,7 @@ batch.add([
   // 2. Assert the captured value on-chain
   await storage.check({
     storageKey,
-    constraints: [{ eq: 10n }],
+    constraint: { eq: 10n },
   }),
 
   // 3. Transfer the captured amount to the recipient
@@ -552,9 +540,9 @@ batch.add([
     capture: { type: 'execResult', storageKey },
   }),
 
-  await storage.check({ storageKey, slotIndex: 0, constraints: [{ eq: 10n }] }),
-  await storage.check({ storageKey, slotIndex: 1, constraints: [{ eq: 21n }] }),
-  await storage.check({ storageKey, slotIndex: 2, constraints: [{ eq: 1n }] }),
+  await storage.check({ storageKey, slotIndex: 0, constraint: { eq: 10n } }),
+  await storage.check({ storageKey, slotIndex: 1, constraint: { eq: 21n } }),
+  await storage.check({ storageKey, slotIndex: 2, constraint: { eq: 1n } }),
 ]);
 ```
 
@@ -585,7 +573,7 @@ batch.add([
   // Assert the captured static call result on-chain
   await storage.check({
     storageKey,
-    constraints: [{ eq: 12n }],
+    constraint: { eq: 12n },
   }),
 ]);
 ```
@@ -620,7 +608,7 @@ batch.add([
   // 2. On-chain assertion: the slot must equal the value we just wrote
   await storage.check({
     storageKey,
-    constraints: [{ eq: amount }],
+    constraint: { eq: amount },
   }),
 
   // 3. Transfer — the amount is resolved from storage at execution time
