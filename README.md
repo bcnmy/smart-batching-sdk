@@ -18,7 +18,7 @@ With composable transactions, you describe what should happen — not just what 
   - [Runtime values](#runtime-values)
   - [On-chain constraints](#on-chain-constraints)
 - [Installation](#installation)
-- [Smart Batching Core](#@bcnmy/smart-batching-core)
+- [Smart Batching Core](#smart-batching-core)
   - [createComposableBatch](#createcomposablebatch)
   - [batch.add](#batchadd)
   - [batch.toCalls and batch.toCalldata](#batchtocalls-and-batchtocalldata)
