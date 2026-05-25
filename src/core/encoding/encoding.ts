@@ -255,10 +255,10 @@ const validateAndProcessChildConstraint = (constraint: ConstraintField): Constra
       throw new Error('Invalid constraint value: signed constraints require bigint');
     }
 
-    // Encode as int256 to preserve two's-complement representation
-    const valueHex = encodeAbiParameters([{ type: 'int256' }], [constraint.value]);
-    const encodedConstraintValue = encodeAbiParameters([{ type: 'bytes32' }], [valueHex as Hex]);
-    return prepareConstraint(constraint.type, encodedConstraintValue);
+    return prepareConstraint(
+      constraint.type,
+      encodeAbiParameters([{ type: 'int256' }], [constraint.value]),
+    );
   }
 
   // Unsigned / address / bool / hex path
@@ -275,9 +275,7 @@ const validateAndProcessChildConstraint = (constraint: ConstraintField): Constra
     throw new Error('Invalid constraint value');
   }
 
-  const valueHex = toBytes32(constraint.value);
-  const encodedConstraintValue = encodeAbiParameters([{ type: 'bytes32' }], [valueHex as Hex]);
-  return prepareConstraint(constraint.type, encodedConstraintValue);
+  return prepareConstraint(constraint.type, toBytes32(constraint.value));
 };
 
 export const validateAndProcessConstraints = (constraints: ConstraintField[]): Constraint[] => {
@@ -376,7 +374,7 @@ export const prepareTargetAndValueInputParams = (
       valueInputParam = {
         paramType: InputParamType.VALUE,
         fetcherType: InputParamFetcherType.RAW_BYTES,
-        paramData: (value as bigint).toString(16).padStart(64, '0') as `0x${string}`,
+        paramData: `0x${(value as bigint).toString(16).padStart(64, '0')}`,
         constraints: [],
       };
     }

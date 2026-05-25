@@ -1,9 +1,26 @@
 import { createComposableBatch } from 'smart-batching';
-import { parseUnits } from 'viem';
+import { parseEther, parseUnits } from 'viem';
 import { baseSepolia } from 'viem/chains';
 import { describe, expect, it } from 'vitest';
-import { account, initNexus, publicClient } from '../utils';
-import { fundWithUsdc, USDC } from './helpers';
+import { account, initNexus, publicClient, WETH_ADDRESS } from '../utils';
+import { fundWithEth, fundWithUsdc, SCA_TARGET_BALANCE, USDC } from './helpers';
+
+const WETH_ABI = [
+  {
+    name: 'deposit',
+    type: 'function',
+    stateMutability: 'payable',
+    inputs: [],
+    outputs: [],
+  },
+  {
+    name: 'balanceOf',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: '', type: 'address' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+] as const;
 
 if (!account) throw new Error('PRIVATE_KEY is not set in environment');
 
@@ -190,5 +207,51 @@ describe('Integration — Biconomy abstractjs composable execution', () => {
     // 5. Execute the signed quote and wait for the supertransaction to settle
     const { hash } = await meeClient.executeQuote({ quote });
     await meeClient.waitForSupertransactionReceipt({ hash });
+  });
+
+  it('static ETH value in composable write: WETH deposit mints correct balance', async () => {
+    const { scaAddress, meeClient } = await initNexus();
+
+    const DEPOSIT_AMOUNT = parseEther('0.0001');
+
+    // Fund SCA with ETH for the deposit and USDC for the MEE fee
+    await fundWithEth(scaAddress, DEPOSIT_AMOUNT * 2n);
+    await fundWithUsdc(scaAddress, SCA_TARGET_BALANCE);
+
+    const batch = createComposableBatch(publicClient, scaAddress);
+    const weth = batch.contract(WETH_ADDRESS, WETH_ABI);
+
+    const wethBalanceBefore = await publicClient.readContract({
+      abi: WETH_ABI,
+      address: WETH_ADDRESS,
+      functionName: 'balanceOf',
+      args: [scaAddress],
+    });
+
+    batch.add([
+      weth.write({
+        functionName: 'deposit',
+        args: [],
+        value: DEPOSIT_AMOUNT,
+      }),
+    ]);
+
+    const quote = await meeClient.getQuote({
+      instructions: [{ calls: await batch.toCalls(), chainId: baseSepolia.id, isComposable: true }],
+      simulation: { simulate: true },
+      feeToken: { address: USDC, chainId: baseSepolia.id },
+    });
+
+    const { hash } = await meeClient.executeQuote({ quote });
+    await meeClient.waitForSupertransactionReceipt({ hash });
+
+    const wethBalanceAfter = await publicClient.readContract({
+      abi: WETH_ABI,
+      address: WETH_ADDRESS,
+      functionName: 'balanceOf',
+      args: [scaAddress],
+    });
+
+    expect(wethBalanceAfter).toEqual(wethBalanceBefore + DEPOSIT_AMOUNT);
   });
 });
