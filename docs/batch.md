@@ -7,7 +7,7 @@
 ## createComposableBatch
 
 ```ts
-import { createComposableBatch } from 'smart-batching';
+import { createComposableBatch } from '@bcnmy/smart-batching';
 
 const batch = createComposableBatch(publicClient, accountAddress);
 ```
