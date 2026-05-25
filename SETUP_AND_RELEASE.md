@@ -90,6 +90,6 @@ To publish a canary build for testing without affecting the stable release:
 ```bash
 bunx changeset pre enter canary
 bun run version
-bun run release --tag canary
+bun run build && bunx changeset publish --tag canary
 bunx changeset pre exit
 ```
