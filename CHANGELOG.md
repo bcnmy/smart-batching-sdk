@@ -1,4 +1,4 @@
-# @bcnmy/smart-batching
+# @biconomy/smart-batching
 
 ## 0.1.0
 
@@ -6,7 +6,7 @@
 
 ---
 
-Initial release of @bcnmy/smart-batching — a TypeScript SDK for building composable ERC-8211 transaction batches for EVM smart accounts.
+Initial release of @biconomy/smart-batching — a TypeScript SDK for building composable ERC-8211 transaction batches for EVM smart accounts.
 
 Features:
 

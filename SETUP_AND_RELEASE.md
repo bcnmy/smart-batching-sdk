@@ -1,4 +1,4 @@
-# @bcnmy/smart-batching
+# @biconomy/smart-batching
 
 ## Installation
 

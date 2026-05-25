@@ -1,4 +1,4 @@
-import { createComposableBatch } from '@bcnmy/smart-batching';
+import { createComposableBatch } from '@biconomy/smart-batching';
 import type { Address } from 'viem';
 import { parseUnits } from 'viem';
 import { baseSepolia } from 'viem/chains';
