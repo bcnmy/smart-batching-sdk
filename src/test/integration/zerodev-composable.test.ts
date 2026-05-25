@@ -18,10 +18,10 @@
  *   executeFromExecutor for each sub-call.
  */
 
+import { createComposableBatch } from '@biconomy/smart-batching';
 import { signerToEcdsaValidator } from '@zerodev/ecdsa-validator';
 import { createKernelAccount, createKernelAccountClient } from '@zerodev/sdk';
 import { getEntryPoint, KERNEL_V3_1 } from '@zerodev/sdk/constants';
-import { createComposableBatch } from '@bcnmy/smart-batching';
 import type { Address, Hex } from 'viem';
 import { encodeFunctionData, getAddress, http, parseUnits } from 'viem';
 import { baseSepolia } from 'viem/chains';

@@ -1,5 +1,5 @@
 {
-  "name": "@bcnmy/smart-batching",
+  "name": "@biconomy/smart-batching",
   "version": "0.1.0",
   "description": "Build composable ERC-8211 transaction batches with runtime values, on-chain constraints, and atomic pre/post conditions for EVM smart accounts.",
   "author": "Biconomy",

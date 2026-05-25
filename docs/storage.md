@@ -3,7 +3,7 @@
 `StorageInstance` provides access to a namespace storage contract — an on-chain key-value store scoped to your smart account. It is the mechanism that lets one call's output flow into a later call as a runtime value, within the same batch.
 
 ```ts
-import { createComposableBatch } from '@bcnmy/smart-batching';
+import { createComposableBatch } from '@biconomy/smart-batching';
 import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
 

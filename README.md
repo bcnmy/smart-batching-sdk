@@ -1,4 +1,4 @@
-# @bcnmy/smart-batching
+# @biconomy/smart-batching
 
 **Type-safe SDK for building composable ERC-8211 transactions on EVM smart accounts.**
 
@@ -293,10 +293,10 @@ This pattern is a slippage guard: the batch only proceeds if the post-swap balan
 
 ```bash
 # npm
-npm install @bcnmy/smart-batching viem
+npm install @biconomy/smart-batching viem
 
 # bun
-bun add @bcnmy/smart-batching viem
+bun add @biconomy/smart-batching viem
 ```
 
 ---
@@ -310,7 +310,7 @@ Everything starts with `createComposableBatch`. It is the central builder that a
 ```ts
 import { createPublicClient, http } from 'viem';
 import { baseSepolia } from 'viem/chains';
-import { createComposableBatch } from '@bcnmy/smart-batching';
+import { createComposableBatch } from '@biconomy/smart-batching';
 
 const publicClient = createPublicClient({
   chain: baseSepolia,
@@ -421,7 +421,7 @@ const userOpHash = await kernelClient.sendUserOperation({
 ```ts
 import { createPublicClient, http, parseUnits } from 'viem';
 import { baseSepolia } from 'viem/chains';
-import { createComposableBatch } from '@bcnmy/smart-batching';
+import { createComposableBatch } from '@biconomy/smart-batching';
 
 const publicClient = createPublicClient({
   chain: baseSepolia,
@@ -493,7 +493,7 @@ Two capture strategies are available:
 ```ts
 import { createPublicClient, http, parseUnits } from 'viem';
 import { baseSepolia } from 'viem/chains';
-import { createComposableBatch } from '@bcnmy/smart-batching';
+import { createComposableBatch } from '@biconomy/smart-batching';
 
 const USDC = '0xUsdcAddress';
 
@@ -589,7 +589,7 @@ Use this pattern when you know the value at signing time but need it available a
 ```ts
 import { createPublicClient, http, parseUnits } from 'viem';
 import { baseSepolia } from 'viem/chains';
-import { createComposableBatch } from '@bcnmy/smart-batching';
+import { createComposableBatch } from '@biconomy/smart-batching';
 
 const USDC = '0xUsdcAddress';
 
