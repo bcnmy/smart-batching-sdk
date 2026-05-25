@@ -92,7 +92,7 @@ Returns a `RuntimeValue` that resolves to the value in a storage slot at executi
 runtimeValue(params?: {
   storageKey?: bigint;
   slotIndex?: number;     // defaults to 0
-  constraints?: RuntimeConstraint[];
+  constraint?: RuntimeConstraint;
   accountAddress?: Address;
   callerAddress?: Address;
 }): Promise<RuntimeValue>
@@ -117,12 +117,12 @@ batch.add([
 ]);
 ```
 
-**With constraints** — reverts if the slot value does not satisfy all constraints at execution time:
+**With a constraint** — reverts if the slot value does not satisfy the constraint at execution time:
 
 ```ts
 await storage.runtimeValue({
   storageKey,
-  constraints: [{ gte: parseUnits('1', 6) }],  // slot must hold at least 1 USDC
+  constraint: { gte: parseUnits('1', 6) },  // slot must hold at least 1 USDC
 })
 ```
 
@@ -130,7 +130,7 @@ await storage.runtimeValue({
 // Signed constraint — slot value is compared as int256
 await storage.runtimeValue({
   storageKey,
-  constraints: [{ gteSigned: -100n }, { lteSigned: 500n }],
+  constraint: { gteSigned: -100n },
 })
 ```
 
@@ -138,7 +138,7 @@ await storage.runtimeValue({
 // OR constraint — passes if any one child passes
 await storage.runtimeValue({
   storageKey,
-  constraints: [{ or: [{ eq: 0n }, { gte: parseUnits('1', 6) }] }],
+  constraint: { or: [{ eq: 0n }, { gte: parseUnits('1', 6) }] },
 })
 ```
 
@@ -173,9 +173,9 @@ Reads a storage slot on-chain during execution and asserts its value against con
 
 ```ts
 check(params: {
-  constraints: RuntimeConstraint[];  // required
+  constraint: RuntimeConstraint;  // required
   storageKey?: bigint;
-  slotIndex?: number;               // defaults to 0
+  slotIndex?: number;              // defaults to 0
   accountAddress?: Address;
   callerAddress?: Address;
 }): Promise<ComposableCall>
@@ -194,7 +194,7 @@ batch.add([
   // Assert the captured value equals the expected result on-chain
   await storage.check({
     storageKey,
-    constraints: [{ eq: parseUnits('10', 6) }],
+    constraint: { eq: parseUnits('10', 6) },
   }),
 
   // Only proceed with the transfer if the captured value passes
@@ -208,18 +208,18 @@ batch.add([
 **Checking a specific slot index:**
 
 ```ts
-await storage.check({ storageKey, slotIndex: 0, constraints: [{ eq: 10n }] })
-await storage.check({ storageKey, slotIndex: 1, constraints: [{ eq: 21n }] })
+await storage.check({ storageKey, slotIndex: 0, constraint: { eq: 10n } })
+await storage.check({ storageKey, slotIndex: 1, constraint: { eq: 21n } })
 ```
 
 **Signed and OR constraints work the same way:**
 
 ```ts
 // Signed — slot value compared as int256
-await storage.check({ storageKey, constraints: [{ gteSigned: -100n }] })
+await storage.check({ storageKey, constraint: { gteSigned: -100n } })
 
 // OR — passes if any one child passes
-await storage.check({ storageKey, constraints: [{ or: [{ eq: 0n }, { gte: 100n }] }] })
+await storage.check({ storageKey, constraint: { or: [{ eq: 0n }, { gte: 100n }] } })
 ```
 
 See [RuntimeConstraint reference](./token.md#runtimeconstraint) for all available constraint shapes.
@@ -244,7 +244,7 @@ myContract.write({
   capture: { type: 'execResult', storageKey },
 }),
 
-await storage.check({ storageKey, slotIndex: 0, constraints: [{ eq: 10n }] }),
-await storage.check({ storageKey, slotIndex: 1, constraints: [{ eq: 21n }] }),
-await storage.check({ storageKey, slotIndex: 2, constraints: [{ eq: 1n }] }),
+await storage.check({ storageKey, slotIndex: 0, constraint: { eq: 10n } }),
+await storage.check({ storageKey, slotIndex: 1, constraint: { eq: 21n } }),
+await storage.check({ storageKey, slotIndex: 2, constraint: { eq: 1n } }),
 ```

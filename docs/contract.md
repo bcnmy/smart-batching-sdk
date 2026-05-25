@@ -165,7 +165,7 @@ Returns a `RuntimeValue` that resolves to the return value of a view function at
 runtimeValue(params: {
   functionName: string;
   args: TArgs;
-  constraints?: RuntimeConstraint[];
+  constraint?: RuntimeConstraint;
 }): RuntimeValue
 ```
 
@@ -187,16 +187,13 @@ batch.add(
 );
 ```
 
-**With constraints** — the call reverts if the resolved value does not satisfy all constraints:
+**With a constraint** — the call reverts if the resolved value does not satisfy the constraint:
 
 ```ts
 oracle.runtimeValue({
   functionName: 'latestPrice',
   args: [],
-  constraints: [
-    { gte: parseUnits('1000', 8) },  // price must be >= 1000
-    { lte: parseUnits('5000', 8) },  // price must be <= 5000
-  ],
+  constraint: { gte: parseUnits('1000', 8) },  // price must be >= 1000
 })
 ```
 
@@ -205,7 +202,7 @@ oracle.runtimeValue({
 oracle.runtimeValue({
   functionName: 'priceDelta',
   args: [],
-  constraints: [{ gteSigned: -500n }, { lteSigned: 500n }],
+  constraint: { gteSigned: -500n },
 })
 ```
 
@@ -214,7 +211,7 @@ oracle.runtimeValue({
 oracle.runtimeValue({
   functionName: 'score',
   args: [],
-  constraints: [{ or: [{ eq: 0n }, { gte: 100n }] }],
+  constraint: { or: [{ eq: 0n }, { gte: 100n }] },
 })
 ```
 
@@ -230,7 +227,7 @@ Calls a view function on-chain during execution and asserts its return value. If
 check(params: {
   functionName: string;
   args: TArgs;
-  constraints: RuntimeConstraint[];
+  constraint: RuntimeConstraint;
 }): ComposableCall
 ```
 
@@ -242,7 +239,7 @@ batch.add(
   pool.check({
     functionName: 'getLiquidity',
     args: [],
-    constraints: [{ gte: parseUnits('10000', 6) }],
+    constraint: { gte: parseUnits('10000', 6) },
   }),
 );
 
@@ -251,7 +248,7 @@ batch.add(
   pool.check({
     functionName: 'balanceOf',
     args: ['0xTokenAddress'],
-    constraints: [{ eq: 0n }],
+    constraint: { eq: 0n },
   }),
 );
 
@@ -260,7 +257,7 @@ batch.add(
   pool.check({
     functionName: 'priceDelta',
     args: [],
-    constraints: [{ gteSigned: -500n }, { lteSigned: 500n }],
+    constraint: { gteSigned: -500n },
   }),
 );
 
@@ -269,7 +266,7 @@ batch.add(
   pool.check({
     functionName: 'getLiquidity',
     args: [],
-    constraints: [{ or: [{ eq: 0n }, { gte: parseUnits('10000', 6) }] }],
+    constraint: { or: [{ eq: 0n }, { gte: parseUnits('10000', 6) }] },
   }),
 );
 ```
