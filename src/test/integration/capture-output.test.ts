@@ -50,7 +50,7 @@
  *   oneOutput(5) → slot = 10, but storage.check asserts slot == 999 → revert.
  */
 
-import { createComposableBatch } from 'smart-batching';
+import { createComposableBatch } from '@bcnmy/smart-batching';
 import type { Abi, Address } from 'viem';
 import { getAddress, parseUnits } from 'viem';
 import { baseSepolia } from 'viem/chains';

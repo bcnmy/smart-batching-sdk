@@ -1,5 +1,5 @@
 {
-  "name": "smart-batching",
+  "name": "@bcnmy/smart-batching",
   "version": "0.0.0",
   "description": "Build composable ERC-8211 transaction batches with runtime values, on-chain constraints, and atomic pre/post conditions for EVM smart accounts.",
   "author": "Biconomy",
@@ -34,6 +34,9 @@
     "README.md"
   ],
   "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "lint": "biome lint --write .",
     "format": "biome format --write .",

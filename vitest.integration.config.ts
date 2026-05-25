@@ -5,7 +5,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
-      'smart-batching': resolve(__dirname, 'src/index.ts'),
+      '@bcnmy/smart-batching': resolve(__dirname, 'src/index.ts'),
     },
   },
   test: {

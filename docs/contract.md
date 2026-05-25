@@ -3,6 +3,15 @@
 `ContractInstance` wraps any contract with its ABI, providing composable `write`, `check`, and `runtimeValue` methods alongside an off-chain `read`. Created via `batch.contract(address, abi)`.
 
 ```ts
+import { createComposableBatch } from '@bcnmy/smart-batching';
+import { createPublicClient, http } from 'viem';
+import { base } from 'viem/chains';
+
+const MY_ABI = [ /* your contract ABI */ ] as const;
+
+const publicClient = createPublicClient({ chain: base, transport: http() });
+const batch = createComposableBatch(publicClient, '0xYourSmartAccountAddress');
+
 const myContract = batch.contract('0xContractAddress', MY_ABI);
 ```
 

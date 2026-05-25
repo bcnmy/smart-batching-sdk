@@ -3,6 +3,13 @@
 Token instances provide composable access to ERC-20 tokens and native ETH. They are created through the batch builder and automatically bound to the smart account address.
 
 ```ts
+import { createComposableBatch } from '@bcnmy/smart-batching';
+import { createPublicClient, http } from 'viem';
+import { base } from 'viem/chains';
+
+const publicClient = createPublicClient({ chain: base, transport: http() });
+const batch = createComposableBatch(publicClient, '0xYourSmartAccountAddress');
+
 const usdc = batch.erc20Token('0xUsdcAddress');
 const eth  = batch.nativeToken();
 ```
