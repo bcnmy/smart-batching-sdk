@@ -17,6 +17,7 @@ With composable transactions, you describe what should happen — not just what 
   - [Pre-conditions and post-conditions](#pre-conditions-and-post-conditions)
   - [Runtime values](#runtime-values)
   - [On-chain constraints](#on-chain-constraints)
+- [Examples](#examples)
 - [Installation](#installation)
 - [Smart Batching Core](#smart-batching-core)
   - [createComposableBatch](#createcomposablebatch)
@@ -286,6 +287,27 @@ batch.add([
 ```
 
 This pattern is a slippage guard: the batch only proceeds if the post-swap balance meets your minimum expectation, enforced atomically on-chain.
+
+---
+
+## Examples
+
+End-to-end examples showing real-world DeFi flows. Each file is self-contained and runs against Base mainnet addresses.
+
+| Example | Description |
+|---------|-------------|
+| [01 — Safe ERC-20 transfer](./examples/01-safe-erc20-transfer.ts) | USDC transfer with sender pre-condition and recipient balance post-condition |
+| [02 — Aave deposit guarded](./examples/02-aave-deposit-guarded.ts) | Aave V3 deposit gated by balance and allowance pre-conditions |
+| [03 — Aave full deposit](./examples/03-aave-full-deposit.ts) | Atomic approve + Aave supply that sweeps the full runtime USDC balance |
+| [04 — Vault auto-compound](./examples/04-vault-auto-compound.ts) | ERC-4626 auto-compound with runtime balance and a deposit range guard |
+| [05 — Swap output guard](./examples/05-swap-output-guard.ts) | Uniswap V3 swap with a post-condition asserting minimum WETH received |
+| [06 — Compound debt repay](./examples/06-compound-debt-repay.ts) | Compound V3 full debt repayment using live `borrowBalanceOf` at execution time |
+| [07 — MEV-protected swap](./examples/07-mev-protected-swap.ts) | Uniswap swap gated by a live Chainlink oracle price band to block sandwich attacks |
+| [08 — Swap and vault deposit](./examples/08-swap-and-vault-deposit.ts) | Swap output captured at execution time and piped atomically into a yield vault |
+| [09 — Collateral top-up](./examples/09-collateral-topup.ts) | Keeper-triggered Aave collateral top-up using storage to lock in the amount |
+| [10 — Leverage loop](./examples/10-leverage-loop.ts) | Single-batch Aave leverage loop: deposit collateral → borrow → swap → re-deposit |
+| [11 — OR stop-loss / take-profit](./examples/11-or-stop-loss-take-profit.ts) | WETH exit triggered by stop-loss OR take-profit in a single OR predicate |
+| [12 — Cross-chain predicate-gated](./examples/12-cross-chain-predicate-gated.ts) | Across bridge + Aave deposit across Base → Arbitrum as one MEE supertransaction |
 
 ---
 
